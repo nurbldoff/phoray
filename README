@@ -1,0 +1,5 @@
+Example run:
+
+In [1]: %run rowland_test.py
+In [2]: img = np.array(image).T
+In [5]: plt.scatter(img[0], img[1], c=img[2], s=1, lw=0)

@@ -1,4 +1,4 @@
-#from __future__ import division
+from __future__ import division
 from math import *
 from vector import Vector
 
