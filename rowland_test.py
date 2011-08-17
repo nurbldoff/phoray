@@ -1,4 +1,4 @@
-#from __future__ import division
+from __future__ import division
 from phoray import *
 import rowland2
 from math import *
@@ -8,30 +8,30 @@ from random import random
 Simulate a Rowland (spherical grating) spectrometer with optional entrance slit.
 """
 
-# parameters for a Rowland spectrometer
-angle = 2        # incidence angle on the grating
+# parameters for a Rowland spectrometer, SI units unless otherwise stated
+angle = 2        # incidence angle on the grating (degrees)
 energy = 500     # center energy of the incident light (eV)
 wl = 1.24e-6/energy      # ...sloppily converted into wavelength
 order = -1       # diffraction order to look at
 R = 5.0          # radius of the grating
-d = 1200         # grating line density
+d = 1200e3       # grating line density, lines/m
 
 # Grating, centered at origin
 s = Sphere(5.0, 0.03, 0.05)
-sg = Mirror(d=1/1200e3, order=order, surface=s, position=Vector(0.,0.,0.),
+sg = Mirror(d=1/d, order=order, surface=s, position=Vector(0.,0.,0.),
             rotation=Vector(0.,0.,0.), surface_offset=Vector(0.,0.,5.0))
 
 # Detector
 p = Plane()
 row = rowland2.Rowland(R_gr=R,
-                       d_gr=d,
+                       d_gr=d/1000,
                        theta_in=angle)
 detx, dety = row.add_ray(energy, order, 0)   # calculate the focal point
 pm = Detector(surface=p, position=Vector(0, detx, dety),
             rotation=Vector(2*atan(dety/detx),0.,0.))
 
 # Incoming light distribution
-dE = 1.0          # energy difference between lines
+dE = 1.0        # energy difference between lines
 xdisp = 1.5     # dispersion angle in horizontal direction
 ydisp = 0.1     # vertical dispersion
 xslit = 0.      # horizontal entrance slit / source size
