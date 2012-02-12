@@ -40,7 +40,7 @@ yslit = 0.      # vertical size
 rays = []
 image =  []
 footprint = []
-n_rays = 100000   # number of rays
+n_rays = 1000000   # number of rays
 
 for E in [energy-dE, energy, energy+dE]:
     wl = 1.24e-6/E
@@ -51,7 +51,7 @@ for E in [energy-dE, energy, energy+dE]:
              wavelength = wl)
 
     # loop over each ray to calculate
-    for i in xrange(n_rays):
+    for i in xrange(n_rays//3):
         # Randomly distribute the initial ray over the slit and dispersion
         # according to a simple box distribution (equal probability)
         a0 = r0.deviate(Vector(ydisp*random()-ydisp/2,
@@ -76,6 +76,7 @@ for E in [energy-dE, energy, energy+dE]:
             pt=pm.localize(a2).endpoint
             image.append([pt.x, pt.y, E])
 
+print len(image)
 
 # Run the same thing in the RAY program, for comparison
 
@@ -91,4 +92,3 @@ for E in [energy-dE, energy, energy+dE]:
 #                 30000,
 #                 0, True,
 #                 "grazetest_")
-

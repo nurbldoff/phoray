@@ -2,25 +2,31 @@ from __future__ import division
 from math import *
 from vector import Vector
 
-DEBUG=False
+DEBUG = False
+
 
 def debug(*args):
     if DEBUG:
         print(args)
 
+
 def quadratic(a, b, c):
     """
     Solve a quadratic function ax^2 + by + c = 0
     """
-    if a<0:
-        return None
-    delta = b**2 - 4*a*c
+    if a == 0.:
+        if b == 0.:
+            return None
+        else:
+            x1 = -c / b
+            return x1, x1
+    delta = b ** 2 - 4 * a * c
     if delta >= 0:
-        x1 = (-b + sqrt(delta)) / (2*a)
-        x2 = (-b - sqrt(delta)) / (2*a)
+        x1 = (-b + sqrt(delta)) / (2 * a)
+        x2 = (-b - sqrt(delta)) / (2 * a)
     else:
-        x1 = complex(0, -b + sqrt(-delta)) / (2*a)
-        x2 = complex(0, -b - sqrt(-delta)) / (2*a)
+        x1 = complex(0, -b + sqrt(-delta)) / (2 * a)
+        x2 = complex(0, -b - sqrt(-delta)) / (2 * a)
     return x1, x2
 
 
@@ -45,39 +51,57 @@ class Ray(object):
         """Parallel movement of the Ray by vector v.
         Endpoint is moved, direction unchanged."""
         #self.endpoint += v
-        return Ray(self.endpoint+v, self.direction, self.wavelength)
+        return Ray(self.endpoint + v, self.direction, self.wavelength)
 
     def deviate(self, dtheta):
-        """Rotate the Ray around the x, y, axes by angles theta_x, theta_y, theta_z"""
+        """Rotate the Ray around the x, y, axes by angles
+        theta_x, theta_y, theta_z
+        """
         #self.direction = self.direction.rotate(r)
-        return Ray(self.endpoint, self.direction.rotate(dtheta), self.wavelength)
+        return Ray(self.endpoint, self.direction.rotate(dtheta),
+                   self.wavelength)
 
     def __repr__(self):
-        return "%s, %s"%(self.endpoint,self.direction)
+        return "%s, %s" % (self.endpoint, self.direction)
 
 
 class Surface(object):
     """
-    A general 3D surface.
+    A general 3D surface. Should not be instantiated but serves as a base class
+    to be inherited.
     """
+    
     def __init__(self, xsize=None, ysize=None, concave=True):
         self.xsize, self.ysize = xsize, ysize
         self.concave = concave
 
+    def intersect(self, r):
+        """This method needs to be implemented by an actual surface.
+        Shall return the point where Ray r intersects the surface.
+        """
+        pass
+
+    def normal(self, p):
+        """This method needs to be implemented by an actual surface.
+        Shall return the normal to the surface at point p.
+        """
+        pass
+
     def grating_direction(self, p):
         """
         Returns a vector oriented along the grating lines (if any).
-        This vector always lies in the plane containing the normal and the local x-axis, and
-        is tangential to the surface (i.e. perpendicular to the normal. It also always has
-        a non-negative projection on the x-axis.
+        This vector always lies in the plane containing the normal and
+        the local x-axis, and is tangential to the surface (i.e.
+        perpendicular to the normal. It also always has a non-negative
+        projection on the x-axis.
 
-        [Danger: special case of n and x-axis parallel]
+        FIXME: special case of n and x-axis parallel
         """
         normal = self.normal(p)
-        xaxis = Vector(1,0,0)
+        xaxis = Vector(1, 0, 0)
         a = normal.cross(xaxis).normalized()
         debug(a)
-        return normal.rotate_around(a, pi/2)
+        return normal.rotate_around(a, pi / 2)
 
     def reflect1(self, ray):
         """
@@ -95,14 +119,14 @@ class Surface(object):
         P = self.intersect(ray)
         if P is not None:
             n = self.normal(P)
-            if cmp(-r/r.norm(), n/n.norm()) == 0:  # normal incidence
-                debug( "normal incidence" )
+            if cmp(-r / r.norm(), n / n.norm()) == 0:  # normal incidence
+                debug("normal incidence")
                 return Ray(P, n, ray.wavelength)
             n_m = (r.cross(n).cross(n))
             n_m /= n_m.norm()
             l = r.scalar(n_m) * n_m
             debug(l)
-            return Ray(P, 2*l-r, ray.wavelength)
+            return Ray(P, 2 * l - r, ray.wavelength)
         else:
             return None
 
@@ -119,12 +143,11 @@ class Surface(object):
         else:
             return None
 
-
     def diffract(self, ray, d, order, line_spacing_function=None):
         r = ray.direction.normalized()
         P = self.intersect(ray)
         if P is not None:
-            if d is None:   #VLS grating
+            if d is None:   # VLS grating
                 d = line_spacing_function(P)
                 #print P.y, d
             n = self.normal(P)
@@ -139,11 +162,12 @@ class Surface(object):
             debug("g=", g)
             phi = acos(r_ref.scalar(g))
             debug("phi=", degrees(phi))
-            theta = acos(r_ref.scalar(n)/sin(phi))
+            theta = acos(r_ref.scalar(n) / sin(phi))
             debug("theta", degrees(theta))
-            theta_m = asin(-order*ray.wavelength/(d*sin(phi)) - sin(theta))
-            debug( "theta_m=", degrees(theta_m) )
-            r_diff = r_ref.rotate_around(g, theta+theta_m)
+            theta_m = asin(-order * ray.wavelength /
+                            (d * sin(phi)) - sin(theta))
+            debug("theta_m=", degrees(theta_m))
+            r_diff = r_ref.rotate_around(g, theta + theta_m)
             debug("r_diff=", r_diff)
             debug("r=", r)
             return Ray(P, r_diff, ray.wavelength)
@@ -154,6 +178,8 @@ class Surface(object):
         """
         Refurns the refracted ray given an incident ray.
         Uses Snell's law.
+
+        FIXME: Incomplete, doesn't work
         """
         r = ray.direction.norm()
         P = self.intersect(ray)
@@ -163,12 +189,13 @@ class Surface(object):
         else:
             return None
 
+        
 class Plane(Surface):
     """
     A plane through the origin and perpendicular to z, i.e. z = 0.
     """
     def normal(self, p):
-        return Vector(0,0,1)
+        return Vector(0, 0, 1)
 
     def intersect(self, ray):
         r = ray.direction
@@ -179,12 +206,60 @@ class Plane(Surface):
             return None
         else:
             t = -a.z / (b.z - a.z)
-            p = a + t*r
+            p = a + t * r
 
             if (self.xsize is None and self.ysize is None) or \
-                    (-self.xsize/2 <= p.x <= self.xsize/2 and
-                      -self.ysize/2 <= p.y <= self.ysize/2):
+                    (-self.xsize / 2 <= p.x <= self.xsize / 2 and
+                     -self.ysize / 2 <= p.y <= self.ysize / 2):
                 return p
+            else:
+                return None
+
+
+class Paraboloid(Surface):
+    """
+    A paraboloid (rotated parabola) described by z/c = (x/a)^2 + (y/b)^2
+    """
+
+    def __init__(self, a, b, c, *args):
+        self.a = a
+        self.b = b
+        self.c = c
+        Surface.__init__(self, *args)
+
+        self.d = -2 * c / a ** 2
+        self.e = -2 * c / b ** 2
+
+    def normal(self, p):
+        f = sqrt((self.d * p.x) ** 2 + (self.e * p.y) ** 2 + 1)
+        return Vector(self.d * p.x / f, self.e * p.y / f, 1 / f)
+
+    def surface(self):
+        coords = []
+        for i in (-self.xsize / 2, 0, self.xsize / 2):
+            for j in (-self.ysize / 2, 0, self.ysize / 2):
+                coords.append(Vector(i, j, self.c *
+                                     (i / self.a ** 2 + j / self.b ** 2)))
+        return coords
+
+    def intersect(self, ray, concave=True):
+        r = ray.direction
+        p = ray.endpoint
+        a2, b2, c = self.a ** 2, self.b ** 2, self.c
+        t = quadratic(r.x ** 2 / a2 + r.y ** 2 / b2,
+                      2 * p.x * r.x / a2 + 2 * p.y * r.y / b2 - r.z / c,
+                      p.x ** 2 / a2 + p.y ** 2 / b2 - p.z / c)
+        if t is None or type(t[0]) is complex or t < 0:  # no intersection
+            return None
+        else:
+            if concave:
+                ip = p + max(t) * r
+            else:
+                ip = p + min(t) * r
+            if (self.xsize is None and self.ysize is None) or \
+                    (-self.xsize / 2 <= ip.x <= self.xsize / 2 and
+                      -self.ysize / 2 <= ip.y <= self.ysize / 2):
+                return ip
             else:
                 return None
 
@@ -199,13 +274,14 @@ class Sphere(Surface):
         Surface.__init__(self, *args)
 
     def normal(self, p):
-        return -p/self.R
+        return -p / self.R
 
     def surface(self):
         coords = []
-        for i in (-self.xsize/2, 0, self.xsize/2):
-            for j in (-self.ysize/2, 0, self.ysize/2):
-                coords.append( Vector(i, j, sqrt(self.R**2-i**2-j**2)) )
+        for i in (-self.xsize / 2, 0, self.xsize / 2):
+            for j in (-self.ysize / 2, 0, self.ysize / 2):
+                coords.append(
+                    Vector(i, j, sqrt(self.R ** 2 - i ** 2 - j ** 2)))
         return coords
 
     def intersect(self, ray, concave=True):
@@ -213,20 +289,21 @@ class Sphere(Surface):
         a = ray.endpoint
         b = a + r
 
-        t = quadratic( (b.z-a.z)**2 + (b.x-a.x)**2 + (b.y-a.y)**2,
-                       2*a.z*(b.z-a.z) + 2*a.x*(b.x-a.x) + 2*a.y*(b.y-a.y),
-                       a.z**2 + a.x**2 + a.y**2 - self.R**2 )
+        t = quadratic((b.z - a.z) ** 2 + (b.x - a.x) ** 2 + (b.y - a.y) ** 2,
+                      2 * a.z * (b.z - a.z) + 2 * a.x * (b.x - a.x) +
+                                                    2 * a.y * (b.y - a.y),
+                      a.z ** 2 + a.x ** 2 + a.y ** 2 - self.R ** 2 )
 
-        if t is None or type(t[0]) is complex or t<0:  # no intersection
+        if t is None or type(t[0]) is complex or t < 0:  # no intersection
             return None
         else:
             if concave:
-                p = a + max(t)*r
+                p = a + max(t) * r
             else:
-                p = a + min(t)*r
+                p = a + min(t) * r
             if (self.xsize is None and self.ysize is None) or \
-                    (-self.xsize/2 <= p.x <= self.xsize/2 and
-                      -self.ysize/2 <= p.y <= self.ysize/2):
+                    (-self.xsize / 2 <= p.x <= self.xsize / 2 and
+                     -self.ysize / 2 <= p.y <= self.ysize / 2):
                 return p
             else:
                 return None
@@ -238,28 +315,28 @@ class Cylinder(Surface):
         Surface.__init__(self, *args)
 
     def normal(self, p):
-        return (Vector(0, -p.y, -p.z))/sqrt(p.y**2 + p.z**2)
+        return (Vector(0, -p.y, -p.z)) / sqrt(p.y ** 2 + p.z ** 2)
 
     def intersect(self, ray, concave=True):
         r = ray.direction
         a = ray.endpoint
-        b = a+r
+        b = a + r
 
-        t = quadratic( (b.z-a.z)**2 + (b.y-a.y)**2,
-                       2*a.z*(b.z-a.z) + 2*a.y*(b.y-a.y),
-                       a.z**2 + a.y**2 - self.R**2 )
+        t = quadratic((b.z - a.z) ** 2 + (b.y - a.y) ** 2,
+                      2 * a.z * (b.z - a.z) + 2 * a.y * (b.y - a.y),
+                      a.z ** 2 + a.y ** 2 - self.R ** 2 )
 
-        if t is None or type(t[0]) is complex or t<0:  # no intersection
+        if t is None or type(t[0]) is complex or t < 0:  # no intersection
             return None
         else:
             if concave:
-                p = a + max(t)*r
+                p = a + max(t) * r
             else:
-                p = a + min(t)*r
-            if (self.xsize is None and self.ysize is None) or \
-                    (-self.xsize/2 <= p.x <= self.xsize/2 and
-                      -self.ysize/2 <= p.y <= self.ysize/2):
-                debug( p )
+                p = a + min(t) * r
+            if (self.xsize is None and self.ysize is None) or (
+                    -self.xsize / 2 <= p.x <= self.xsize / 2 and
+                    -self.ysize / 2 <= p.y <= self.ysize / 2):
+                debug(p)
                 return p
             else:
                 return None
@@ -275,11 +352,11 @@ class Ellipsoid(Surface):
         """
         Surface normal at point p, calculated through the gradient
         """
-        a,b,c =self.a, self.b, self.c
+        a, b, c = self.a, self.b, self.c
         #return -p/p.norm()
         #d = 1/(2*sqrt(c**2*(1-p.x**2/a**2-p.y**2/b**2))) * 2*c**2
         #return Vector(d*p.x/a**2, d*p.y/b**2)
-        n = Vector(-2*p.x/a**2, -2*p.y/b**2, -2*p.z/c**2)
+        n = Vector(-2 * p.x / a ** 2, -2 * p.y / b ** 2, -2 * p.z / c ** 2)
         return n.normalized()
 
     def intersect(self, ray, concave=True):
@@ -289,20 +366,23 @@ class Ellipsoid(Surface):
         a, b, c = self.a, self.b, self.c
 
         t = quadratic(
-            (p1.z-p0.z)**2 + c**2*(p1.x-p0.x)**2/a**2 + c**2*(p1.y-p0.y)**2/b**2,
-            2*p0.z*(p1.z-p0.z) + c**2*2*p0.x*(p1.x-p0.x)/a**2 + c**2*2*p0.y*(p1.y-p0.y)/b**2,
-            p0.z**2 + c**2*p0.x**2/a**2 + c**2*p0.y**2/b**2 - c**2 )
+            (p1.z - p0.z) ** 2 + c ** 2 * (p1.x - p0.x) ** 2 / a ** 2 +
+                                          c ** 2 * (p1.y - p0.y) ** 2 / b ** 2,
+            2 * p0.z * (p1.z - p0.z) + c ** 2 * 2 * p0.x * (p1.x - p0.x) /
+                           a ** 2 + c ** 2 * 2 * p0.y * (p1.y - p0.y) / b ** 2,
+            p0.z ** 2 + c ** 2 * p0.x ** 2 / a ** 2 + c ** 2 * p0.y ** 2 /
+                                                              b ** 2 - c ** 2 )
 
         if t is None or type(t[0]) is complex:  # no intersection
             return None
         else:
             if concave:
-                p = p0 + max(t)*r
+                p = p0 + max(t) * r
             else:
-                p = p0 + min(t)*r
+                p = p0 + min(t) * r
             if (self.xsize is None and self.ysize is None) or \
-                    (-self.xsize/2 <= p.x <= self.xsize/2 and
-                      -self.ysize/2 <= p.y <= self.ysize/2):
+                    (-self.xsize / 2 <= p.x <= self.xsize / 2 and
+                     -self.ysize / 2 <= p.y <= self.ysize / 2):
                 return p
             else:
                 return None
@@ -316,8 +396,10 @@ class Ellipsoid(Surface):
         #     else:
         #         return None
 
+
 class Element(object):
-    def __init__(self, surface, position, rotation=Vector(0,0,0), surface_offset=Vector(0,0,0), material=None):
+    def __init__(self, surface, position, rotation=Vector(0, 0, 0),
+                 surface_offset=Vector(0, 0, 0), material=None):
         self.position = position
         self.rotation = rotation
         self.surface = surface
@@ -332,25 +414,26 @@ class Element(object):
         return self.globalize(Ray(pl, -p))
 
     def localize_vector(self, v):
-        return (v-self.position).rotate(-self.rotation)-self.surface_offset
+        return (v - self.position).rotate(-self.rotation) - self.surface_offset
 
     def localize(self, ray):
         """
         Transform a Ray in global coordinates into local coordinates
         """
-        return Ray( (ray.endpoint-self.position).rotate(-self.rotation)-self.surface_offset,
-                    ray.direction.rotate(-self.rotation), ray.wavelength )
+        return Ray((ray.endpoint - self.position).rotate(-self.rotation) -
+                   self.surface_offset, ray.direction.rotate(-self.rotation),
+                   ray.wavelength)
 
     def globalize_vector(self, v):
-        return (v+self.surface_offset).rotate(self.rotation)+self.position
+        return (v + self.surface_offset).rotate(self.rotation) + self.position
 
     def globalize(self, ray):
         """
         Transform a local Ray into global coordinates
         """
-        return Ray( (ray.endpoint+self.surface_offset).rotate(self.rotation)+self.position,
-                    ray.direction.rotate(self.rotation), ray.wavelength )
-
+        return Ray((ray.endpoint + self.surface_offset).rotate(self.rotation) +
+                   self.position, ray.direction.rotate(self.rotation),
+                   ray.wavelength )
 
 
 class SimpleMirror(Element):
@@ -377,9 +460,10 @@ class Detector(Element):
         if ray is not None:
             ray0 = self.localize(ray)
             pos = self.globalize_vector(self.surface.intersect(ray0))
-            return Ray(pos, Vector(0,0,0), ray.wavelength)
+            return Ray(pos, Vector(0, 0, 0), ray.wavelength)
         else:
             return None
+
 
 class Mirror(Element):
 
@@ -390,13 +474,13 @@ class Mirror(Element):
 
     def __init__(self, d=0, order=0, *args, **kwargs):
         """
-        Define a reflecting element with surface shape given by s.
-        If d>0 it will work as a grating with line spacing d
-        and lines in the xz-plane and diffraction order given by order. Otherwise it works
-        as a plain mirror.
+        Define a reflecting element with surface shape given by s. If
+        d>0 it will work as a grating with line spacing d and lines in
+        the xz-plane and diffraction order given by order. Otherwise
+        it works as a plain mirror.
         """
-        self.d=d
-        self.order=order
+        self.d = d
+        self.order = order
         Element.__init__(self, *args, **kwargs)
 
     def propagate(self, ray):
@@ -415,6 +499,7 @@ class Mirror(Element):
         else:
             return None
 
+
 class SphericalVLSGrating(Mirror):
 
     def __init__(self, an, *args, **kwargs):
@@ -423,22 +508,24 @@ class SphericalVLSGrating(Mirror):
 
     def get_line_distance(self, p):
         """
-        Returns the local grating line density according to VLS parameters
-        a(x) = a_0 + a_1*x + ... + a_n*x^n where x is the distance to the grating center.
+        Returns the local grating line density according to VLS
+        parameters a(x) = a_0 + a_1*x + ... + a_n*x^n where x is the
+        distance to the grating center.
         """
-        y = 1000*p.y
-        R = 1000*self.surface.R
-        x = copysign(sqrt(y**2 + (R - sqrt(R**2-y**2))), y)
-        x = 2*R*asin(x/(2*R))
+
+        y = 1000 * p.y
+        R = 1000 * self.surface.R
+        x = copysign(sqrt(y ** 2 + (R - sqrt(R ** 2 - y ** 2))), y)
+        x = 2 * R * asin(x / (2 * R))
         #x=y
-        b=-x/sqrt(R**2-x**2)
+        b = -x / sqrt(R ** 2 - x ** 2)
         theta = atan(b)  # grating tangent angle
-        print b,theta
+        print b, theta
         d = 0
-        for n, a in enumerate( self.an ):
-            d += a * x**n
-        d*=cos(theta)
-        return 1e-3/d
+        for n, a in enumerate(self.an):
+            d += a * x ** n
+        d *= cos(theta)
+        return 1e-3 / d
 
     def propagate(self, ray):
         """
@@ -455,4 +542,3 @@ class SphericalVLSGrating(Mirror):
                 return self.globalize(diffracted_ray)
         else:
             return None
-

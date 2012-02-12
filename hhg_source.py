@@ -4,16 +4,20 @@ from math import *
 from shay import wl
 from quantities import m
 
-E = 38.75
-E2 = 35.63
-n=1000
+E = 27.0
+E2 = 28
 
-s1 = beam4.gaussian_source((0, 0, 0), (50e-6/2.35, 50e-6/2.35, 0),
-                           (0, 0, 1), (4e-3/2.35, 4e-3/2.35, 0),
+fwhm = 30e-6
+
+n=800
+
+
+s1 = beam4.gaussian_source((0, 0, 0), (fwhm/2.35, fwhm/2.35, 0.01),
+                           (0, 0, 1), (4e-3/2.35, 4e-3/2.35, 0.01),
                            E, 0.0,
                            n)
-s2 = beam4.gaussian_source((0, 0, 0), (50e-6/2.35, 50e-6/2.35, 0),
-                           (0, 0, 1), (4e-3/2.35, 4e-3/2.35, 0),
+s2 = beam4.gaussian_source((0, 0, 0), (fwhm/2.35, fwhm/2.35, 0.01),
+                           (0, 0, 1), (4e-3/2.35, 4e-3/2.35, 0.01),
                            E2, 0.0,
                            n)
 
@@ -27,7 +31,7 @@ for a in s1:
     line = []
     line.extend(a[0])
     line.extend(a[1])
-    line.extend(((float(wl(a[2][0]).rescale(m)), "r"), 0, None, None, None))
+    line.extend(((float(wl(a[2][0]).rescale(m)), "r"), 1, None, None, None))
     p1.append(line)
 
 for a in s2:

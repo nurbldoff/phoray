@@ -3,17 +3,19 @@ import matplotlib.pyplot as plt
 from math import asin, degrees
 from phoray import Ray
 
-def project_xz(raylist):
+def project_xz(raylist, final_length=0):
     pts=[]
     for rays in raylist:
         if not None in rays:
-
             element = []
             for r in rays:
                 element.append((r.endpoint.x, r.endpoint.z, r.wavelength))
             # element.append((rays[-1].endpoint.x+10*rays[-1].direction.x,
             #                     rays[-1].endpoint.z+10*rays[-1].direction.z))
-            pts.append([element, rays[0].wavelength])
+            if final_length:
+                p = (rays[-1].endpoint + final_length * rays[-1].direction)
+                element.append((p.x, p.z, rays[-1].wavelength))
+                pts.append(element)
     return pts
 
 def project_yz(raylist):

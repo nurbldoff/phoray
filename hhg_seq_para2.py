@@ -26,7 +26,7 @@ def standa_params(d, theta, L, a):
     PFL = a
     return PFL, ZR, CA
 
-E = 38.75
+E = 27
 E2 = 35.63
 wavel1 = float(wl(E))*1e-9
 
@@ -59,7 +59,7 @@ tilt_gr = pi/2-(tilt_m1-alpha_gr)
 
 alt = radians(3.5)
 m = 1
-ldensity = 400e3
+ldensity = 60e3
 theta = degrees(asin(m*wavel1*ldensity/(2*sin(alt))))
 
 
@@ -123,7 +123,7 @@ det = phoray.SimpleMirror(p, along(r5, d_det), Vector(angleto(r5, pi/2),0,0))
 
 
 
-print 7
+print 4
 print beam4.make_beam4_table(
     ("X", "Y", "Z", "Tilt", "Pitch", "Roll",
      "Cx", "C", "Asph", "Gx", "Ord", "Type", "Dx", "Dy", "offOy", "Form"),
@@ -143,7 +143,7 @@ print beam4.make_beam4_table(
         # slit
         (sl.position.x, sl.position.y, sl.position.z,
          degrees(sl.rotation.x), 0, 0,
-         0, 0, None, None, None, "iris", 50e-6, 0.05, None, "S"),
+         0, 0, None, None, None, "iris", 50e-2, 0.05, None, "S"),
         #m3
         (sl.position.x, sl.position.y+a3*sin(tilt_m3), sl.position.z-a3*cos(tilt_m3),
          degrees(tilt_m3), 0, 0,
