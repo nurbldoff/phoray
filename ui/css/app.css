@@ -1,0 +1,107 @@
+/* app css stylesheet */
+
+body {
+    font-size: x-small;
+    font-family: sans;
+}
+
+#sidebar {
+    background: #bbb;
+}
+
+#view {
+    background: #444;
+}
+
+
+input {
+    width: 100%;
+}
+
+select {
+    width: 100%;
+}
+
+div.wrapper {
+    padding: 5px 5px 0 5px;
+    overflow-y: auto;
+    max-height: 100%;
+}
+
+div.systems {
+    padding: 5px;
+    background-color: #eee;
+    border-width: 2px;
+    border-color: black;
+    max-height: 30%;
+    overflow: auto;
+}
+
+
+.systems .system {
+    padding-top: 1px;
+}
+
+div.sources {
+    padding-left: 10px;
+    padding-top: 10px;
+}
+
+div.elements {
+    padding-left: 10px;
+    padding-top: 3px;
+}
+
+.systems .element {
+    padding-top: 1px;
+    padding-left: 10px;
+}
+
+.systems div.header {
+    font-weight: bold;
+    text-align: left;
+}
+
+.systems .selected {
+    color: white;
+    background: #88f;
+}
+
+.attrib {
+    padding-bottom: 5px;
+}
+
+.attrib div.header {
+    font-size: small;
+    text-align: left;
+    color: white;
+    width: 100%;
+    background-color: #777;
+    padding: 2px;
+    border-radius: 3px;
+}
+
+.label {
+    text-align: right;
+}
+
+.label2 {
+    text-align: center;
+}
+
+.label3 {
+    text-align: center;
+}
+
+
+.geometry {
+    border: solid #888 1px;
+    border-radius: 5px;
+    padding: 0 10px;
+}
+
+div.coordinates {
+    border-top: solid black 1px;
+    border-radius: 5px;
+    padding-top: 3px;
+}
