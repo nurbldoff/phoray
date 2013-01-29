@@ -1,5 +1,6 @@
-Example run:
+A "physical" raytracer written in python.
 
-In [1]: %run rowland_test.py
-In [2]: img = np.array(image).T
-In [5]: plt.scatter(img[0], img[1], c=img[2], s=1, lw=0)
+No dependencies. To play with it, start the UI with "python server.py" 
+and then point a webgl capable browser to http://localhost:8080.
+
+Note: the stuff in the "examples" directory probably doesn't work anymore.
