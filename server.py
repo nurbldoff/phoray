@@ -45,24 +45,6 @@ schemas = dict(System=dict((name, cls.schema)
                            for name, cls in source_classes.items()))
 
 
-@route('/')
-def staticindex():
-    return static_file('index.html', root='ui')
-
-
-@route('/<filepath:path>')
-def staticpath(filepath):
-    return static_file(filepath, root='ui')
-
-
-@get('/schema')
-def get_schema():
-    return {"system": schemas["System"],
-            "geometry": schemas["Surface"],
-            "element": schemas["Element"],
-            "source": schemas["Source"]}
-
-
 def _create_geometry(spec):
     cls = surface_classes.get(spec["type"])
     args = spec["args"]
@@ -80,6 +62,24 @@ def _create_source(spec):
     cls = source_classes.get(spec["type"])
     args = spec["args"]
     return cls(**args)
+
+
+@route('/')
+def staticindex():
+    return static_file('index.html', root='ui')
+
+
+@route('/<filepath:path>')
+def staticpath(filepath):
+    return static_file(filepath, root='ui')
+
+
+@get('/schema')
+def get_schema():
+    return {"system": schemas["System"],
+            "geometry": schemas["Surface"],
+            "element": schemas["Element"],
+            "source": schemas["Source"]}
 
 
 @post('/system')
@@ -172,7 +172,6 @@ def axis():
 def trace():
     """Trace the paths of a number of rays through a system."""
     query = request.query
-
     n = int(query.n)  # number of rays to trace
 
     result = []
@@ -191,8 +190,15 @@ def trace():
             print (end - start).length()
             step.append((end.x, end.y, end.z))
             result.append(step)
-    print result
     return {"traces": result}
+
+
+@get('/footprint')
+def footprint():
+    """Return the current traced footprint for the given element."""
+    query = request.query
+    n = int(query.n)  # the chosen element
+    return {"footprint": optical_systems[0].elements[n].footprint}
 
 
 # Start the server

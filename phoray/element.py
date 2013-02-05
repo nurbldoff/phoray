@@ -1,6 +1,5 @@
 from __future__ import division
 from math import *
-from collections import OrderedDict
 
 from member import Member
 from surface import Surface
@@ -21,17 +20,25 @@ class Element(Member):
                  offset=Vec(0, 0, 0), alignment=Vec(0, 0, 0)):
         self.geometry = geometry
         Member.__init__(self, position, rotation, offset, alignment)
+        self.footprint = []
+
+    def propagate(self, ray):
+        """
+        Takes a ray in global coordinates and returns the ray that
+        results from interacting with the surface (e.g. reflection)
+        """
+        new_ray = self._propagate(ray)
+        if new_ray is not None:
+            self.footprint.append((new_ray.endpoint.x, new_ray.endpoint.y))
+        return new_ray
 
 
 class Mirror(Element):
 
     #schema = OrderedDict(base_schema)
 
-    def propagate(self, ray):
-        """
-        Takes a ray in global coordinates and tries to reflect it in the
-        geometry
-        """
+    def _propagate(self, ray):
+
         if ray is not None:
             ray0 = self.localize(ray)
             reflected_ray = self.geometry.reflect(ray0)
@@ -47,7 +54,7 @@ class Detector(Element):
 
     # schema = OrderedDict(base_schema)
 
-    def propagate(self, ray):
+    def _propagate(self, ray):
         if ray is not None:
             ray0 = self.localize(ray)
             pos = self.globalize_vector(self.geometry.intersect(ray0))
@@ -75,11 +82,8 @@ class ReflectiveGrating(Element):
         print "Mirror", args, kwargs
         Element.__init__(self, *args, **kwargs)
 
-    def propagate(self, ray):
-        """
-        Takes a ray in global coordinates and tries to diffract it in the
-        geometry
-        """
+    def _propagate(self, ray):
+
         if ray is not None:
             ray0 = self.localize(ray)
             diffracted_ray = self.geometry.diffract(
@@ -123,11 +127,8 @@ class ReflectiveVLSGrating(Mirror):
         d *= cos(theta)
         return 1e-3 / d
 
-    def propagate(self, ray):
-        """
-        Takes a ray in global coordinates and tries to reflect it in the
-        geometry
-        """
+    def _propagate(self, ray):
+
         if ray is not None:
             ray0 = self.localize(ray)
             diffracted_ray = self.geometry.diffract(ray0, None, self.order,
@@ -153,11 +154,8 @@ class Glass(Element):
         self.index2 = index2
         Element.__init__(self, *args, **kwargs)
 
-    def propagate(self, ray):
-        """
-        Takes a ray in global coordinates and tries to reflect it in the
-        geometry
-        """
+    def _propagate(self, ray):
+
         if ray is not None:
             ray0 = self.localize(ray)
             refracted_ray = self.geometry.refract(ray0, self.index1,

@@ -55,6 +55,10 @@ class OpticalSystem(object):
 
     def trace(self, n=1):
         """Generate some rays and propagate them through the system."""
+
+        for element in self.elements:
+            element.footprint = []
+
         for source in self.sources:
             for ray in source.generate(n):
                 yield self.propagate(ray)

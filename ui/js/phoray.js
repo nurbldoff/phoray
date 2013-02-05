@@ -380,6 +380,13 @@
                   });
         };
 
+        self.footprint = function (element) {
+            $.get("/footprint", {n: self.elements.indexOf(element)},
+                  function (data) {
+                      console.log("footprint", data);
+                  });
+        };
+
         self.clear_traces = function () {
             view3d.remove_traces();
         };
