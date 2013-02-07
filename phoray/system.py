@@ -5,8 +5,6 @@ from math import *
 from minivec import Vec, Mat
 from ray import Ray
 
-base_schema = OrderedDict()
-
 
 class OpticalSystem(object):
 
@@ -84,12 +82,8 @@ class Free(OpticalSystem):
 
     """A completely free system."""
 
-    schema = base_schema
-
 
 class Sequential(OpticalSystem):
-
-    schema = base_schema
 
     def get_axis(self, source=0):
         """Return the directions of the segments of the optical axis"""

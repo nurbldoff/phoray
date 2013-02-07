@@ -1,8 +1,11 @@
 from pprint import pprint
-import inspect
+from inspect import getmembers, isclass, getmro
+from imp import find_module, load_module
+from operator import itemgetter
 import json
 import copy
-import pyclbr
+import os
+from collections import OrderedDict
 
 from bottle import get, post, request, run, static_file, route
 from phoray import system, element, surface, source
@@ -10,55 +13,64 @@ import util
 
 optical_systems = []
 
+# Figure out what plugins are available
 
-# List all the things we have available, by listing classes that
+PLUGIN_DIR = "plugins"
+plugins = [os.path.splitext(mod)[0]
+           for mod in os.listdir(PLUGIN_DIR) if mod.endswith(".py")]
+plugin_classes = [
+    (plugin + "." + name, cls)
+    for plugin, module
+    in ((plug, load_module(plug, *find_module(plug, [PLUGIN_DIR])))
+        for plug in sorted(plugins))
+    for name, cls in sorted(getmembers(module, isclass), key=itemgetter(0))]
+
+# List all the things we have available, by checking which classes
 # inherit the different base classes.
 
-system_classes = dict((name, obj)
-                      for name, obj in inspect.getmembers(system)
-                      if inspect.isclass(obj))
-element_classes = dict((name, obj)
-                       for name, obj in inspect.getmembers(element)
-                       if inspect.isclass(obj) and
-                       element.Element in inspect.getmro(obj)[1:])
-surface_classes = dict((name, obj)
-                       for name, obj in inspect.getmembers(surface)
-                       if inspect.isclass(obj) and
-                       surface.Surface in inspect.getmro(obj)[1:])
-source_classes = dict((name, obj)
-                      for name, obj in inspect.getmembers(source)
-                      if inspect.isclass(obj) and
-                      source.Source in inspect.getmro(obj)[1:])
+system_classes = OrderedDict((name, cls) for name, cls
+                             in sorted(getmembers(system, isclass),
+                                       key=itemgetter(0)) + plugin_classes
+                             if system.OpticalSystem in getmro(cls)[1:])
+element_classes = OrderedDict((name, cls) for name, cls
+                              in sorted(getmembers(element, isclass),
+                                        key=itemgetter(0)) + plugin_classes
+                              if element.Element in getmro(cls)[1:])
+surface_classes = OrderedDict((name, cls) for name, cls
+                              in sorted(getmembers(surface, isclass),
+                                        key=itemgetter(0)) + plugin_classes
+                              if surface.Surface in getmro(cls)[1:])
+source_classes = OrderedDict((name, cls) for name, cls
+                             in sorted(getmembers(source, isclass),
+                                       key=itemgetter(0)) + plugin_classes
+                             if source.Source in getmro(cls)[1:])
+
+# Find out the argument types for each class.
+
+schemas = dict(System=OrderedDict((name, {})
+                                  for name, cls in system_classes.items()),
+               Surface=OrderedDict((name, util.signature(cls))
+                                   for name, cls in surface_classes.items()),
+               Element=OrderedDict((name, util.signature(cls))
+                                   for name, cls in element_classes.items()),
+               Source=OrderedDict((name, util.signature(cls))
+                                  for name, cls in source_classes.items()))
 
 
-# Find out the argument types for each class, by looking at the default
-# arguments defined.
-
-schemas = dict(System=dict((name, cls.schema)
-                           for name, cls in system_classes.items()
-                           if hasattr(cls, "schema")),  # update this too
-               Surface=dict((name, util.signature(cls))
-                            for name, cls in surface_classes.items()),
-               Element=dict((name, util.signature(cls))
-                            for name, cls in element_classes.items()),
-               Source=dict((name, util.signature(cls))
-                           for name, cls in source_classes.items()))
-
-
-def _create_geometry(spec):
+def create_geometry(spec):
     cls = surface_classes.get(spec["type"])
     args = spec["args"]
     return cls(**args)
 
 
-def _create_element(spec):
+def create_element(spec):
     cls = element_classes[spec["type"]]
     args = spec["args"]
-    args["geometry"] = _create_geometry(args["geometry"])
+    args["geometry"] = create_geometry(args["geometry"])
     return cls(**args)
 
 
-def _create_source(spec):
+def create_source(spec):
     cls = source_classes.get(spec["type"])
     args = spec["args"]
     return cls(**args)
@@ -99,13 +111,13 @@ def define_system():
         system = sys_class()
 
         for ele_spec in spec["elements"]:
-            emt = _create_element(ele_spec)
+            emt = create_element(ele_spec)
             system.elements.append(emt)
             print "Added element", ele_spec["type"]
 
         for src_spec in spec["sources"]:
             try:
-                src = _create_source(src_spec)
+                src = create_source(src_spec)
                 system.sources.append(src)
                 print "Added source", src_spec["type"]
             except KeyError as e:
@@ -118,18 +130,18 @@ def define_system():
     diff = []
     for i, sys in enumerate(optical_systems):
         qsys = query["systems"][i]
-        eldiffs = [util.dictdiff(qsys["elements"][j],
-                                 util.object_to_dict(el, schemas))
-                   for j, el in enumerate(sys.elements)]
-        sodiffs = [util.dictdiff(qsys["sources"][j],
-                                 util.object_to_dict(so, schemas))
-                   for j, so in enumerate(sys.sources)]
-        sysdiff = {}
-        if any(eldiffs):
-            sysdiff["elements"] = eldiffs
-        if any(sodiffs):
-            sysdiff["sources"] = sodiffs
-        diff.append(sysdiff)
+        element_diffs = [util.dictdiff(qsys["elements"][j],
+                                       util.object_to_dict(el, schemas))
+                         for j, el in enumerate(sys.elements)]
+        source_diffs = [util.dictdiff(qsys["sources"][j],
+                                      util.object_to_dict(so, schemas))
+                        for j, so in enumerate(sys.sources)]
+        system_diff = {}
+        if any(element_diffs):
+            system_diff["elements"] = element_diffs
+        if any(source_diffs):
+            system_diff["sources"] = source_diffs
+        diff.append(system_diff)
 
     # pprint([util.system_to_dict(system, system_schema)
     #         for i, system in enumerate(optical_systems)])
@@ -139,16 +151,17 @@ def define_system():
 
 @get('/mesh')
 def get_mesh():
+    """Return a mesh representation of an element."""
     query = request.query
-    print "mesh query", query["geometry"]
     spec = json.loads(query["geometry"])
-    geo = _create_geometry(spec)
+    geo = create_geometry(spec)
     verts, faces = geo.mesh(int(query.resolution))
     return {"verts": verts, "faces": faces}
 
 
 @get('/system')
 def get_system():
+    """Return the current defined system."""
     systems = []
     for system in optical_systems:
         elements = []
@@ -164,6 +177,7 @@ def get_system():
 
 @get('/axis')
 def axis():
+    """Return the guide axis."""
     return {"axis": [dict(x=pt.x, y=pt.y, z=pt.z)
                      for pt in optical_systems[0].axis()]}
 

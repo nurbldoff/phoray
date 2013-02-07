@@ -29,7 +29,8 @@ class Element(Member):
         """
         new_ray = self._propagate(ray)
         if new_ray is not None:
-            self.footprint.append((new_ray.endpoint.x, new_ray.endpoint.y))
+            self.footprint.append({"x": new_ray.endpoint.x,
+                                   "y": new_ray.endpoint.y})
         return new_ray
 
 

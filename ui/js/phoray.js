@@ -384,6 +384,7 @@
             $.get("/footprint", {n: self.elements.indexOf(element)},
                   function (data) {
                       console.log("footprint", data);
+                      plot(data, "#footprint");
                   });
         };
 

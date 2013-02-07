@@ -83,7 +83,7 @@ def signature(cls):
             return None
         for i, arg in enumerate(spec.args[1:]):
             value = spec.defaults[i]
-            print "value", value
+            #print "value", value
             argtype = type(value)
             if argtype == Vec:
                 argtype = "position"
