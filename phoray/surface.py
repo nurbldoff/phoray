@@ -204,14 +204,14 @@ class Sphere(Surface):
         Surface.__init__(self, *args, **kwargs)
 
     def normal(self, p):
-        return Vec(p.x, p.y, p.z - self.R) / self.R
+        return Vec(p.x, p.y, p.z + self.R) / self.R
 
     def intersect(self, ray):
 
         r = ray.direction
-        if r.z * self.R <= 0:  # backlit
-            print "backlit"
-            return None
+        #if r.z * self.R <= 0:  # backlit
+            #print "backlit"
+            #return None
 
         #a = ray.endpoint
         a = ray.endpoint + Vec(0, 0, self.R)
@@ -268,8 +268,6 @@ class Sphere(Surface):
 
 
 class Cylinder(Surface):
-
-    # schema = OrderedDict([("R", {"type": "number", "value": 1})] + base_schema)
 
     def __init__(self, R=1, *args, **kwargs):
         self.R = R
@@ -425,7 +423,7 @@ class Paraboloid(Surface):
         self.d = -2 * c / a ** 2
         self.e = -2 * c / b ** 2
 
-        self.concave = True
+        self.concave = a * b * c < 0
 
     def normal(self, p):
         f = sqrt((self.d * p.x) ** 2 + (self.e * p.y) ** 2 + 1)
