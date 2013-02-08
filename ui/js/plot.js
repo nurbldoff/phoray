@@ -6,9 +6,10 @@ var plot = function (data, elementid) {
 
     var x = d3.scale.linear()
             .range([0, width]);
-
+    x.ticks(1);
     var y = d3.scale.linear()
             .range([height, 0]);
+    y.ticks(1);
 
     var color = d3.scale.category10();
 
@@ -20,6 +21,7 @@ var plot = function (data, elementid) {
             .scale(y)
             .orient("left");
 
+    d3.select("svg").remove();
     var svg = d3.select(elementid).append("svg")
             .attr("width", width + margin.left + margin.right)
             .attr("height", height + margin.top + margin.bottom)
@@ -58,7 +60,7 @@ var plot = function (data, elementid) {
         .attr("r", 2.0)
         .attr("cx", function(d) { return x(d.x); })
         .attr("cy", function(d) { return y(d.y); })
-        .style("fill", function(d) { return color(d.x); });
+        .style("fill", "#FFF");
 
     var legend = svg.selectAll(".legend")
             .data(color.domain())

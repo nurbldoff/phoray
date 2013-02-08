@@ -384,7 +384,22 @@
             $.get("/footprint", {n: self.elements.indexOf(element)},
                   function (data) {
                       console.log("footprint", data);
-                      plot(data, "#footprint");
+                      //plot( data.footprint, "#footprint");
+                      $.plot($("#footprint"), [data.footprint], {
+                          series: {
+                              points: {
+                                  radius: 2,
+                                  show: true,
+                                  fill: true,
+                                  fillColor: "#058DC7",
+                                  lineWidth: 0
+                              }
+                          },
+                          grid: {
+                              color: "#000"
+                          },
+                          shadowSize: 0
+                      });
                   });
         };
 
