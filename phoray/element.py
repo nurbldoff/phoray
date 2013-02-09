@@ -6,12 +6,6 @@ from surface import Surface
 from minivec import Vec, Mat
 from ray import Ray
 
-# base_schema = [("position", {"type": "position"}),
-#                ("rotation", {"type": "rotation"}),
-#                ("offset", {"type": "position"}),
-#                ("alignment", {"type": "rotation"}),
-#                ("geometry", {"type": "geometry"})]
-
 
 class Element(Member):
 
@@ -35,7 +29,7 @@ class Element(Member):
 
 class Mirror(Element):
 
-    #schema = OrderedDict(base_schema)
+    """A mirror reflects incoming rays in its surface."""
 
     def _propagate(self, ray):
 
@@ -52,23 +46,35 @@ class Mirror(Element):
 
 class Detector(Element):
 
-    # schema = OrderedDict(base_schema)
+    """A detector does not propagate rays further. It is intended to
+    be the final element in a system.
+    """
 
     def _propagate(self, ray):
         if ray is not None:
             ray0 = self.localize(ray)
             pos = self.globalize_vector(self.geometry.intersect(ray0))
-            return Ray(pos, Vec(0, 0, 0), ray.wavelength)
+            return Ray(pos, None, ray.wavelength)
         else:
             return None
 
 
+class Screen(Element):
+
+    """A screen does not interact with the direction of the imcoming
+    rays, but simply passes them through. Useful for checking the
+    intersection of a beam.
+    """
+
+    def _propagate(self, ray):
+        ray0 = self.localize(ray)
+        p = self.globalize_vector(self.geometry.intersect(ray0))
+        return Ray(p, ray.direction, ray.wavelength)
+
+
 class ReflectiveGrating(Element):
 
-    """A reflective grating."""
-
-    # schema = OrderedDict([("d", {"type": "length"}),
-    #                       ("order", {"type": "number"})] + base_schema)
+    """A reflective grating diffracts incoming rays reflectively."""
 
     def __init__(self, d=0, order=0, *args, **kwargs):
         """
@@ -99,8 +105,6 @@ class ReflectiveGrating(Element):
 class ReflectiveVLSGrating(Mirror):
 
     """A grating with varying line spacing. Not complete."""
-
-    # schema = OrderedDict([("an", {"type": "length"})] + base_schema)
 
     def __init__(self, an=1.0, *args, **kwargs):
         self.an = an
@@ -144,10 +148,6 @@ class ReflectiveVLSGrating(Mirror):
 class Glass(Element):
 
     """A glass surface, defined by the refraction indices on each side."""
-
-    # schema = OrderedDict([("index1", {"type": "number", "value": 1.0}),
-    #                       ("index2", {"type": "number", "value": 1.0})] +
-    #                      base_schema)
 
     def __init__(self, index1=1.0, index2=1.0, *args, **kwargs):
         self.index1 = index1

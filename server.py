@@ -88,6 +88,9 @@ def staticpath(filepath):
 
 @get('/schema')
 def get_schema():
+    pprint(schemas["System"])
+    pprint(schemas["Element"])
+
     return {"system": schemas["System"],
             "geometry": schemas["Surface"],
             "element": schemas["Element"],
@@ -200,7 +203,10 @@ def trace():
                 step.append((x, y, z))
                 print (ray.endpoint - start).length(),
                 start = ray.endpoint
-            end = ray.endpoint + ray.direction * 10
+            if ray.direction is None:
+                end = ray.endpoint
+            else:
+                end = ray.endpoint + ray.direction * 1
             print (end - start).length()
             step.append((end.x, end.y, end.z))
             result.append(step)

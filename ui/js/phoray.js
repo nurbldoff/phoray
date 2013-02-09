@@ -121,6 +121,7 @@
         Item.call(self, schemas, spec);
 
         self.changed = ko.computed(function () {
+            console.log("changed");
             return ko.toJS(self);
         });
 
@@ -275,6 +276,7 @@
               });
 
         self.get_mesh = function () {
+            console.log("get mesh");
             $.get("/mesh", {geometry: ko.toJSON(self.args().geometry), resolution: 10},
                   function(data) {
                       self.set_repr(view3d.make_mesh(data.verts, data.faces));
@@ -282,6 +284,10 @@
         };
 
         self.args().geometry.changed.subscribe(self.get_mesh);
+        self.set = function(spec) {
+            Member.set.call(self, spec);
+            self.args().geometry.changed.subscribe(self.get_mesh);
+        };
     };
 
 
@@ -391,12 +397,13 @@
                                   radius: 2,
                                   show: true,
                                   fill: true,
-                                  fillColor: "#058DC7",
+                                  fillColor: "#FFF",
                                   lineWidth: 0
                               }
                           },
                           grid: {
-                              color: "#000"
+                              color: "#FFF",
+                              backgroundColor: "rgba(0,0,0,0.5)"
                           },
                           shadowSize: 0
                       });

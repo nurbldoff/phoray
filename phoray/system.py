@@ -44,11 +44,12 @@ class OpticalSystem(object):
 
         trace = [ray]
         for el in self.elements:
+            if ray.direction is None:
+                break
             ray = el.propagate(ray)
             if ray is None:
                 break
-            else:
-                trace.append(ray)
+            trace.append(ray)
         return trace
 
     def trace(self, n=1):

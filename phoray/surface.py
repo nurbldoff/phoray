@@ -1,15 +1,9 @@
 from __future__ import division
 from math import *
-#from collections import OrderedDict
 
 from minivec import Vec, Mat
 from ray import Ray
 from solver import quadratic
-#from . import debug
-
-
-# base_schema = [("xsize", {"type": "length", "value": 1}),
-#                ("ysize", {"type": "length", "value": 1})]
 
 
 class Surface(object):
@@ -139,8 +133,6 @@ class Plane(Surface):
     A plane through the origin and perpendicular to z, i.e. z = 0.
     """
 
-    # schema = OrderedDict(base_schema)
-
     def normal(self, p):
         return Vec(0, 0, 1)
 
@@ -194,8 +186,6 @@ class Sphere(Surface):
     Half a sphere of radius R, with center (0,0,0). If R > 0, it is the top
     hapf (z > 0) and if R < 0 it is the lower half (z < 0).
     """
-
-    # schema = OrderedDict([("R", {"type": "number", "value": 1})] + base_schema)
 
     def __init__(self, R=1, *args, **kwargs):
         self.R = R
@@ -331,10 +321,6 @@ class Cylinder(Surface):
 
 class Ellipsoid(Surface):
 
-    # schema = OrderedDict([("a", {"type": "number", "value": 1}),
-    #                       ("b", {"type": "number", "value": 1}),
-    #                       ("c", {"type": "number", "value": 1})] + base_schema)
-
     def __init__(self, a=1, b=1, c=1, *args, **kwargs):
         self.a, self.b, self.c = a, b, c
         kwargs["xsize"] = min(kwargs["xsize"], abs(a))
@@ -348,7 +334,7 @@ class Ellipsoid(Surface):
         a, b, c = self.a, self.b, self.c
         n = Vec(-2 * p.x / a ** 2,
                  -2 * p.y / b ** 2,
-                 -2 * p.z / c ** 2 - c)
+                 -2 * (p.z + c) / c ** 2)
         return n.normalize()
 
     def intersect(self, ray):
