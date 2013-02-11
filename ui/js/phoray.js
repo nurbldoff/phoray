@@ -265,8 +265,24 @@
         //view3d.render();
     };
 
+    function create(schemas, sort, type) {
+        var obj = {type: type, args: {}},
+            schema = schemas[sort][type];
+        console.log("schema", schema);
+        for (var property in schema) {
+            console.log("property", property);
+            var subtype = schema[property].type;
+            if (subtype == "geometry") {
+                obj.args[property] = create(schemas, "geometry", "Plane");
+            } else {
+                obj.args[property] = schema[property].value;
+            }
+        }
+        return obj;
+    }
+
     // An optical element
-    var Element = function (schema, spec) {
+    var _Element = function (schema, spec) {
         var self = this;
 
         Member.call(self, schema, spec);
@@ -284,15 +300,15 @@
         };
 
         self.args().geometry.changed.subscribe(self.get_mesh);
-        self.set = function(spec) {
-            Member.set.call(self, spec);
-            self.args().geometry.changed.subscribe(self.get_mesh);
-        };
+        // self.set = function(spec) {
+        //     Item.set.call(self, spec);
+        //     self.args().geometry.changed.subscribe(self.get_mesh);
+        // };
     };
 
 
     // A lightsource
-    var Source = function (schema, spec) {
+    var _Source = function (schema, spec) {
         var self = this;
 
         Member.call(self, schema, spec);
@@ -304,26 +320,74 @@
         ));
     };
 
+    function Element(data) {
+        ko.mapping.fromJS(data, {}, this);
 
-    function OpticalSystem() {
+        self.schema = ko.computed(function () {
+            return schemas["element"][self.type()];
+        });
+
+        self.get_mesh = ko.computed( function () {
+            $.get("/mesh", {geometry: ko.toJSON(self.args().geometry), resolution: 10},
+                  function(data) {
+                      Representation.call(self, view3d.make_mesh(data.verts, data.faces));
+                  });
+        });
+    };
+
+    function Source(data) {
+        ko.mapping.fromJS(data, {}, this);
+
+        self.schema = ko.computed(function () {
+            return schemas["source"][self.type()];
+        });
+
+    };
+
+    var OpticalSystem = function (data) {
         var self = this;
-
-        Member.call(self, system_defs, {type: "Free"});
-
-        self.elements = ko.observableArray([]);
-        self.sources = ko.observableArray([]);
-
         var traces = null;
+        // Member.call(self, system_defs, {type: "Free"});
+
+        ko.mapping.fromJS(data, {}, this);
+
+        self.schema = ko.computed(function () {
+            return schemas["system"][self.type()];
+        });
+        // self.elements = ko.observableArray([]);
+        // self.sources = ko.observableArray([]);
+
+        self.mapping = {
+            elements: {
+                create: function (options) {
+                    console.log(options.data);
+                    return new Element(options.data);
+                }
+            },
+            sources: {
+                create: function (options) {
+                    return new Source(options.data);
+                }
+            }
+        };
 
         self.add_element = function () {
-            var element = new Element(element_defs, {type: "Mirror"});
-            self.elements.push(element);
+            self.elements.push(ko.mapping.fromJS(create(schemas, "element", "Mirror")));
         };
 
         self.add_source = function () {
-            var source = new Source(source_defs, {type: "GaussianSource"});
-            self.sources.push(source);
+            self.sources.push(ko.mapping.fromJS(create(schemas, "source", "GaussianSource")));
         };
+
+        // self.add_element = function () {
+        //     var element = new Element(element_defs, {type: "Mirror"});
+        //     self.elements.push(element);
+        // };
+
+        // self.add_source = function () {
+        //     var source = new Source(source_defs, {type: "GaussianSource"});
+        //     self.sources.push(source);
+        // };
 
         var _elements_or_sources = function (something) {
             if (self.elements.indexOf(something) >= 0) {
@@ -413,11 +477,11 @@
         self.clear_traces = function () {
             view3d.remove_traces();
         };
-    }
+    };
 
-    var system_defs, element_defs, source_defs, geometry_defs;
+    var system_defs, element_defs, source_defs, geometry_defs, schemas;
 
-    function OpticalSystemsViewModel() {
+    function ViewModel() {
         var self = this;
 
         self.systems = ko.observableArray([]);
@@ -425,10 +489,22 @@
 
         self.selected_element = ko.observable(null);
 
+        self.mapping = {
+            systems: {
+                create: function (options) {
+                    console.log("data", options.data);
+                    return new OpticalSystem(options.data);
+                }
+            }
+        };
+
         self.add_system = function () {
-            var system = new OpticalSystem();
-            self.systems.push(system);
-            self.selected(system);
+            $.ajax({url: "/add_system", type: "POST",
+                    data: JSON.stringify({type: 'Free', index: 0}),
+                    contentType: "application/json",
+                    success: function (data) {
+                        ko.mapping.fromJSON(data, self.mapping, self);
+                    }});
         };
 
         self.select_element = function (element) {
@@ -462,11 +538,12 @@
         });
 
         self.send = function () {
-            var jsdata = ko.toJSON({systems: self.systems});
+            var jsdata = ko.mapping.fromJS(self.systems, self.mapping);
             $.ajax({url: "/system", type: "POST",
                     data: jsdata, contentType: "application/json",
                     success: function (data) {
-                        self.set(data);
+                        //self.set(data);
+                        ko.mapping.fromJS(data, self.mapping, self);
                         view3d.render();
                     }});
         };
@@ -474,6 +551,7 @@
         // Ask the server what kinds of objects it supports
         $.get("/schema",
               function (data) {
+                  schemas = data;
                   system_defs = data.system;
                   element_defs = data.element;
                   source_defs = data.source;
@@ -483,12 +561,12 @@
         // If the server already has a system defined, let's use it
         $.get("/system",
               function (data) {
-                  self.set(data);
+                  ko.mapping.fromJSON(data);
               });
 
     }
 
-    ko.applyBindings(new OpticalSystemsViewModel());
+    ko.applyBindings(new ViewModel());
     view3d.render();
 
 })();

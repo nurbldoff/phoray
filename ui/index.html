@@ -64,7 +64,7 @@
                 </td>
               </tr>
 
-              <!-- ko foreach: args().schema() -->
+              <!-- ko foreach: $data.schema -->
               <tr data-bind="template: {name: 'property-' + $data.type + '-template',
                              data: {name: $data.name, value: $parent.args()[$data.name]}}">
 
@@ -74,11 +74,11 @@
             </table>
             <div>
               <div>
-                <button data-bind="click: add_source">Add Source</button>
-                <button data-bind="click: add_element">Add Element</button>
+                <button data-bind="click: $data.add_source">Add Source</button>
+                <button data-bind="click: $data.add_element">Add Element</button>
               </div> <div>
-                <button data-bind="click: trace">Trace</button>
-                <button data-bind="click: clear_traces">Clear trace</button>
+                <button data-bind="click: $data.trace">Trace</button>
+                <button data-bind="click: $data.clear_traces">Clear trace</button>
               </div>
             </div>
           </div>
@@ -100,7 +100,7 @@
                 <td  class="label">
                   type:
                 </td> <td>
-                  <select data-bind="value: type, options: type.choices"/>
+                  <select data-bind="value: $data.type, options: type.choices"/>
                 </td>
               </tr>
 
@@ -212,6 +212,7 @@
 
 
   <script src="js/libs/knockout.js"></script>
+  <script src="js/libs/knockout.mapping.js"></script>
   <script src="js/libs/ko.observableDictionary.js"></script>
   <script src="js/libs/knockout.mapping-latest.js"></script>
   <script src="js/libs/ko.numeric.js"></script>

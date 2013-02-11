@@ -107,6 +107,8 @@ def define_system():
     query = request.json
     #pprint(query)
     specs = copy.deepcopy(query)
+    print "specs"
+    pprint(specs)
 
     for spec in specs["systems"]:
         pprint(spec)
@@ -149,7 +151,34 @@ def define_system():
     # pprint([util.system_to_dict(system, system_schema)
     #         for i, system in enumerate(optical_systems)])
     pprint(diff)
-    return {"systems": diff}
+    return self.get_system()["systems"]
+
+
+@post('/add_system')
+def add_system():
+    query = request.json
+    cls = system_classes[query["type"]]
+    where = optical_systems
+    where.insert(query["index"], cls())
+    return get_system()
+
+
+@post('/add_element')
+def add_element():
+    query = request.json
+    cls = element_classes[query["type"]]
+    where = optical_systems[query["system"]].elements
+    where.insert(query["index"], cls())
+    return get_system()
+
+
+@post('/add_source')
+def add_source():
+    query = request.json
+    cls = source_classes[query["type"]]
+    where = optical_systems[query["system"]].sources
+    where.insert(query["index"], cls())
+    return get_system()
 
 
 @get('/mesh')

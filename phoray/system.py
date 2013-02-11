@@ -67,13 +67,13 @@ class OpticalSystem(object):
             src = self.sources[0]
             r = Ray(src.position, src.globalize_direction(src.axis),
                     src.wavelength)
-            axis = [src.position]
+            axis = []
             for i in xrange(len(self.elements)):
-                r = self.elements[i].propagate(r)
                 if r is None:
                     break
                 else:
                     axis.append(r.endpoint)
+                    r = self.elements[i].propagate(r)
             return axis
         else:
             return []
