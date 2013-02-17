@@ -1,4 +1,4 @@
-from random import gauss
+from random import seed, randint, gauss
 from collections import OrderedDict
 
 from member import Member
@@ -55,10 +55,13 @@ class GaussianSource(Source):
 
     def __init__(self, size=Vec(0, 0, 0),
                  divergence=Vec(0, 0, 0),
+                 random_seed=randint(0, 1000000),
                  *args, **kwargs):
         self.size = Vec(size)
         self.divergence = Vec(divergence)
-        print "GaussianSource", args, kwargs
+        self.random_seed = random_seed
+        seed(random_seed)
+
         Source.__init__(self, *args, **kwargs)
 
     def generate(self, n=1):

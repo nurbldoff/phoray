@@ -188,22 +188,6 @@
 
     OpticalSystem.prototype = Object.create(Item.prototype);
 
-    OpticalSystem.prototype.add_element = function () {
-        var element = new Element(create(schemas, "element", "Mirror"));
-        this.elements.push(element);
-        this.selected_element(element);
-    };
-
-    OpticalSystem.prototype.add_source = function () {
-        var source = new Source(create(schemas, "source", "GaussianSource"));
-        this.sources.push(source);
-        this.selected_element(source);
-    };
-
-    OpticalSystem.prototype.move_up = function (what) {
-        // do something intelligent
-    };
-
     OpticalSystem.prototype.trace = function () {
         $.get("/trace", {n: 100},
               function (data) {
@@ -219,7 +203,7 @@
 
         //self.systems = ko.observableArray([]);
         self.selected_system = ko.observable(null);
-        self.selected_element = ko.observable();
+        self.selected_element = ko.observable(null);
 
         self.mapping = {
             systems: {
@@ -256,7 +240,9 @@
 
                   // Start listening for any changes in the model, and
                   // if they happen, send everything to the server.
-                  self.listener = ko.computed(self.send);
+                  self.listener = ko.computed(function () {
+                      self.send();
+                  });  // .extend({throttle: 0});
               });
 
         self.send = function () {
@@ -268,9 +254,39 @@
                         //self.set(data);
                         console.log("got", data);
                         if (data.systems.length > 0) {
+                            // This means the system generated on the server was different
+                            // from the client's one, so we have to update it. Could this
+                            // lead to a loop?
                             ko.mapping.fromJS(data.systems, self.mapping, self.systems);
                         }
+                        self.selected_system().trace();
                     }});
+        };
+
+        self.footprint = function (element) {
+            var sys_index = self.systems.indexOf(self.selected_system),
+                ele_index = self.selected_system().elements.indexOf(self.selected_element);
+            $.get("/footprint", {element: ele_index, system: sys_index},
+                  function (data) {
+                      console.log("footprint", data);
+                      //plot( data.footprint, "#footprint");
+                      $.plot($("#footprint"), [data.footprint], {
+                          series: {
+                              points: {
+                                  radius: 2,
+                                  show: true,
+                                  fill: true,
+                                  fillColor: "#FFF",
+                                  lineWidth: 0
+                              }
+                          },
+                          grid: {
+                              color: "#FFF",
+                              backgroundColor: "rgba(0,0,0,0.5)"
+                          },
+                          shadowSize: 0
+                      });
+                  });
         };
 
         self.add_system = function () {
@@ -282,6 +298,18 @@
             self.selected_system(system);
         };
 
+        self.add_element = function () {
+            var element = new Element(create(schemas, "element", "Mirror"));
+            self.selected_system().elements.push(element);
+            self.selected_element(element);
+        };
+
+        self.add_source = function () {
+            var source = new Source(create(schemas, "source", "GaussianSource"));
+            self.selected_system().sources.push(source);
+            self.selected_element(source);
+        };
+
         self.select_system = function (system) {
             self.selected_element(null);
             self.selected_system(system);
@@ -291,6 +319,34 @@
             console.log("select", element, system);
             self.selected_system(system);
             self.selected_element(element);
+        };
+
+        self.remove_element = function () {
+            var element = self.selected_element(),
+                list = self.selected_system()[element.kind + "s"],
+                index = list.indexOf(element);
+            list.remove(element);
+            self.selected_element(list()[index]);
+        };
+
+        self.move_element_up = function () {
+            var element = self.selected_element(),
+                list = self.selected_system()[element.kind + "s"];
+            var index = list.indexOf(element);
+            if (index > 0) {
+                list.remove(element);
+                list.splice(index - 1, 0, element);
+            }
+        };
+
+        self.move_element_down = function () {
+            var element = self.selected_element(),
+                list = self.selected_system()[element.kind + "s"];
+            var index = list.indexOf(element);
+            if (index < list().length-1) {
+                list.remove(element);
+                list.splice(index + 1, 0, element);
+            }
         };
 
     };

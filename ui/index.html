@@ -30,8 +30,8 @@
           <div data-bind="visible: sources().length > 0" class="header">Sources</div>
           <div data-bind="foreach: $data.sources">
             <div class="item"
-                  data-bind="click: $root.select_element.bind($root, $data, $parent),
-                             css: {selected: $root.selected_element() == $data}">
+                 data-bind="click: $root.select_element.bind($root, $data, $parent),
+                            css: {selected: $root.selected_element() == $data}">
               <span data-bind="text: $index"> </span>:
               <span data-bind="text: name"> </span>
               <span data-bind="text: type"> </span>
@@ -67,7 +67,13 @@
         <div class="grids section">
           <div class="system">
             <div class="header">
-              <div class="grid-8">system</div>
+              <div class="grid-8">
+
+                <span> System </span>
+                <span data-bind="text: $root.systems.indexOf($data)"> </span>
+                (<span data-bind="text: id"> </span>)
+
+              </div>
               <div class="grid-1" data-bind="click: $parent.move_up">^</div>
               <div class="grid-1" data-bind="click: $parent.move_down">v</div>
               <div class="grid-1" data-bind="click: $parent.remove">X</div>
@@ -87,8 +93,8 @@
 
             <div class="wrap">
               <div class="grids">
-                <button class="grid-6" data-bind="click: $data.add_source">Add Source</button>
-                <button class="grid-6" data-bind="click: $data.add_element">Add Element</button>
+                <button class="grid-6" data-bind="click: $root.add_source">Add Source</button>
+                <button class="grid-6" data-bind="click: $root.add_element">Add Element</button>
                 <button class="grid-6" data-bind="click: $data.trace">Trace</button>
                 <button class="grid-6" data-bind="click: $data.clear_traces">Clear trace</button>
               </div>
@@ -100,11 +106,14 @@
              class="grids section">
           <div class="" data-bind="css: kind">
             <div class="header">
-              <div class="grid-8" data-bind="text: kind"></div>
-              <div class="grid-1" data-bind="click: $parent.footprint">P</div>
-              <div class="grid-1" data-bind="click: $parent.move_up">^</div>
-              <div class="grid-1" data-bind="click: $parent.move_down">v</div>
-              <div class="grid-1" data-bind="click: $parent.remove">X</div>
+              <div class="grid-8">
+                <span data-bind="text: kind"></span>
+                <span data-bind="text: $root.selected_system()[kind + 's'].indexOf($data)"> </span>
+              </div>
+              <div class="grid-1" data-bind="click: $root.footprint">P</div>
+              <div class="grid-1" data-bind="click: $root.move_element_up">^</div>
+              <div class="grid-1" data-bind="click: $root.move_element_down">v</div>
+              <div class="grid-1" data-bind="click: $root.remove_element">X</div>
             </div>
 
             <div class="attrib">
@@ -210,7 +219,7 @@
   <script src="js/libs/jquery.flot.js"></script>
 
   <script src="js/knockout-utils.js"></script>
-  <script src="js/scene2.js"></script>
+  <script src="js/scene.js"></script>
   <script src="js/plot.js"></script>
   <script src="js/main.js"></script>
 

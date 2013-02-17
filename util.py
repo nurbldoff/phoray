@@ -46,7 +46,6 @@ def object_to_dict(obj, schema):
                                           source.Source)
                if isinstance(obj, kind)][0]
     objdict = dict(type=objtype, args={})
-    print objkind, objtype
     for name in schema[objkind][objtype]:
         value = getattr(obj, name)
         objdict["args"][name] = convert_attr(value, schema)

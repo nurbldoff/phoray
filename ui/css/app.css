@@ -28,10 +28,13 @@ div.systems {
 .systems .item {
     margin-left: 20px;
     padding-left: 5px;
-}
-.systems .header {
     font-weight: bold;
+
+}
+
+.systems .header {
     text-align: left;
+    font-weight: normal;
 }
 
 .systems .selected {

@@ -100,9 +100,9 @@ ko.observable.fn.forceNumeric = function() {
                 var current = underlyingObservable(),
                     valueToWrite = isNaN(newValue) ? 0 : parseFloat(+newValue);
 
-                if (valueToWrite < 0) {
-                    valueToWrite = 0;
-                }
+                // if (valueToWrite < 0) {
+                //     valueToWrite = 0;
+                // }
 
                 //only write if it changed
                 if (valueToWrite !== current) {

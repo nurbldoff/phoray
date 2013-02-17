@@ -60,8 +60,6 @@ schemas = dict(System=OrderedDict((name, {})
 
 def create_geometry(spec):
     cls = surface_classes.get(spec["type"])
-    print "geometry spec"
-    pprint(spec)
     args = dict((name, prop["value"])
                 for name, prop in spec["args"].items())
     geometry = cls(**args)
@@ -71,7 +69,6 @@ def create_geometry(spec):
 
 def create_element(spec):
     cls = element_classes[spec["type"]]
-    print "eleent spec", spec["type"], spec["args"].items()
     args = dict((name, prop["value"]) for name, prop in spec["args"].items())
     args["geometry"] = create_geometry(args["geometry"])
     element = cls(**args)
@@ -99,8 +96,6 @@ def staticpath(filepath):
 
 @get('/schema')
 def get_schema():
-    # pprint(schemas["System"])
-    # pprint(schemas["Element"])
 
     return {"system": schemas["System"],
             "geometry": schemas["Surface"],
@@ -116,12 +111,9 @@ def define_system():
     optical_systems = []
 
     query = request.json
-    #pprint(query)
     specs = copy.deepcopy(query)
 
     for spec in specs["systems"]:
-        print "system spec"
-        pprint(spec)
         sys_class = system_classes[spec["type"]]
         system = sys_class()
         system.id = spec["id"]
@@ -129,13 +121,11 @@ def define_system():
         for ele_spec in spec["elements"]:
             emt = create_element(ele_spec)
             system.elements.append(emt)
-            print "Added element", ele_spec["type"]
 
         for src_spec in spec["sources"]:
             try:
                 src = create_source(src_spec)
                 system.sources.append(src)
-                print "Added source", src_spec["type"]
             except KeyError as e:
                 print "Error:", str(e)
 
@@ -159,10 +149,6 @@ def define_system():
             system_diff["sources"] = source_diffs
         diff.append(system_diff)
 
-    # pprint([util.system_to_dict(system, system_schema)
-    #         for i, system in enumerate(optical_systems)])
-    print "difference:"
-    pprint(diff)
     if any(diff):
         return get_system()
     else:
@@ -220,7 +206,6 @@ def get_system():
             sources.append(util.object_to_dict(source, schemas))
         sysdict = util.system_to_dict(system, schemas)
         systems.append(sysdict)
-    print "sending systems", systems
     return dict(systems=systems)
 
 
@@ -247,13 +232,11 @@ def trace():
             for ray in trace:
                 x, y, z = ray.endpoint
                 step.append((x, y, z))
-                print (ray.endpoint - start).length(),
                 start = ray.endpoint
             if ray.direction is None:
                 end = ray.endpoint
             else:
                 end = ray.endpoint + ray.direction * 1
-            print (end - start).length()
             step.append((end.x, end.y, end.z))
             result.append(step)
     return {"traces": result}
@@ -263,8 +246,10 @@ def trace():
 def footprint():
     """Return the current traced footprint for the given element."""
     query = request.query
-    n = int(query.n)  # the chosen element
-    return {"footprint": optical_systems[0].elements[n].footprint}
+    sys_n = int(query.system)
+    ele_n = int(query.element)  # the chosen element
+
+    return {"footprint": optical_systems[sys_n].elements[ele_n].footprint}
 
 
 # Start the server
