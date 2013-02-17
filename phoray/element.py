@@ -9,9 +9,10 @@ from ray import Ray
 
 class Element(Member):
 
-    def __init__(self, geometry=Surface(),
+    def __init__(self,
                  position=Vec(0, 0, 0), rotation=Vec(0, 0, 0),
-                 offset=Vec(0, 0, 0), alignment=Vec(0, 0, 0)):
+                 offset=Vec(0, 0, 0), alignment=Vec(0, 0, 0),
+                 geometry=Surface()):
         self.geometry = geometry
         Member.__init__(self, position, rotation, offset, alignment)
         self.footprint = []

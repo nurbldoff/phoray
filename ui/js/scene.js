@@ -1,54 +1,23 @@
-/* TODO: This is just a bunch of THREE stuff thrown together.
- * It should be structured. */
-
 var view3d = (function () {
 
-    var self = {};
-
-    if (!Detector.webgl) {
-        var warning = Detector.getWebGLErrorMessage();
-        document.getElementById('view').appendChild(warning);
-    } else {
-        var renderer = new THREE.WebGLRenderer({antialias: true});
-        //var renderer = new THREE.CanvasRenderer({antialias: false});
-        var element = document.getElementById("view"),
-            view_width = element.offsetWidth, view_height = element.offsetHeight;
-
-        element.parentNode.replaceChild(renderer.domElement, element);
-        element = renderer.domElement;
-        element.id = "view";
-        renderer.setSize( view_width, view_height );
-
-        var scene = new THREE.Scene();
-        self.scene = scene;
-
-        // var camera = new THREE.PerspectiveCamera(
-        //     25,             // Field of view
-        //     view_width / view_height,      // Aspect ratio
-        //     0.1,            // Near plane
-        //     10000           // Far plane
-        // );
-        var camera = new THREE.OrthographicAspectCamera(
-            20, view_width / view_height, 0.1, 10000
-        );
-
-        scene.add( camera );
-
+    function setup_lights (scene) {
         var light = new THREE.DirectionalLight( 0xFFFFFF, 0.5 );
         light.position.set( 10, 0, 5 );
         light.lookAt( scene.position );
         scene.add( light );
 
-        var light = new THREE.DirectionalLight( 0xFFFFFF, 1.0 );
+        light = new THREE.DirectionalLight( 0xFFFFFF, 1.0 );
         light.position.set( -10, 10, 5 );
         light.lookAt( scene.position );
         scene.add( light );
 
-        var light = new THREE.DirectionalLight( 0xFFFFFF, 0.5 );
+        light = new THREE.DirectionalLight( 0xFFFFFF, 0.5 );
         light.position.set( 0, -10, -5 );
         light.lookAt( scene.position );
         scene.add( light );
+    }
 
+    function setup_grid (scene) {
         // Grid
         var size = 10, step = 1;
         var geometry = new THREE.Geometry();
@@ -68,35 +37,33 @@ var view3d = (function () {
         }
         var grid = new THREE.Line( geometry, material, THREE.LinePieces );
         scene.add(grid);
+    }
 
-        var theta = -Math.PI / 4, start_theta = theta,
-            phi = Math.PI / 6, start_phi = phi,
-            mouse_start = {x: 0, y: 0}, mouse_pos= {x: 0, y: 0}, mouse_down = false,
-            scale = 1;
+    function setup_input(view, element) {
 
-        element.onmousedown = function ( event) {
+        element.onmousedown = function (event) {
             event.preventDefault();
 
-	    mouse_start = {x: ( event.clientX / element.offsetWidth ) * 2 - 1,
-	                   y: ( event.clientY / element.offsetHeight ) * 2 + 1};
-            start_theta = theta;
-            start_phi = phi;
+	    view.mouse_start = {x: ( event.clientX / element.offsetWidth ) * 2 - 1,
+	                        y: ( event.clientY / element.offsetHeight ) * 2 + 1};
+            view.start_theta = view.theta;
+            view.start_phi = view.phi;
 
-            mouse_down = true;
+            view.mouse_down = true;
         };
 
         element.onmouseup = function ( event ) {
-            mouse_down = false;
+            view.mouse_down = false;
         };
 
         element.onmousemove = function ( event ) {
 
 	    event.preventDefault();
 
-            if (mouse_down) {
-	        mouse_pos = {x: ( event.clientX / element.offsetWidth ) * 2 - 1,
+            if (view.mouse_down) {
+	        view.mouse_pos = {x: ( event.clientX / element.offsetWidth ) * 2 - 1,
 	                     y: ( event.clientY / element.offsetHeight ) * 2 + 1};
-                self.render();
+                view.render();
             }
         };
 
@@ -122,56 +89,93 @@ var view3d = (function () {
             event = event ? event : window.event;
             var wheelData = event.detail ? event.detail : event.wheelDelta;
             if (wheelData > 0) {
-                scale *= 1.1;
+                view.scale *= 1.1;
             } else {
-                scale /= 1.1;
+                view.scale /= 1.1;
             }
-            self.render();
+            view.render();
         });
-
-        self.render = function (mouse_coords) {
-	    theta = start_theta - 2 * (mouse_pos.x - mouse_start.x);
-	    phi = Math.min(Math.PI/2,
-                           Math.max(-Math.PI/2, start_phi + 2 * (mouse_pos.y - mouse_start.y)));
-
-            camera.position.x = 40 * Math.sin(theta) * Math.cos(phi);
-            camera.position.y = 40 * Math.sin(phi);
-	    camera.position.z = 40 * Math.cos(theta) * Math.cos(phi);
-            camera.width = 20 * scale;
-            camera.height = 20 * scale;
-            camera.updateProjectionMatrix();
-	    camera.lookAt( self.scene.position );
-
-            renderer.render( scene, camera );
-        };
-
-        //window.scene = scene;
-        //self.render();
     }
 
-    var rotateAroundWorldAxis = function ( object, axis, radians ) {
-        var rotWorldMatrix = new THREE.Matrix4();
-        rotWorldMatrix.makeRotationAxis(axis, radians);
-        rotWorldMatrix.multiplySelf(object.matrix); // pre-multiply
-        object.matrix = rotWorldMatrix;
-        object.rotation.setEulerFromRotationMatrix(object.matrix, object.order);
+
+    this.View = function (element) {
+        var self = this;
+        self.traces = null;
+
+        if (!Detector.webgl) {
+            var warning = Detector.getWebGLErrorMessage();
+            document.getElementById('view').appendChild(warning);
+        } else {
+            this.renderer = new THREE.WebGLRenderer({antialias: true});
+            //var renderer = new THREE.CanvasRenderer({antialias: false});
+            var view_width = element.offsetWidth, view_height = element.offsetHeight;
+
+            // Camera coodinates
+            self.theta = -Math.PI / 4;
+            self.start_theta = self.theta,
+            self.phi = Math.PI / 6;
+            self.start_phi = self.phi;
+            self.mouse_start = {x: 0, y: 0};
+            self.mouse_pos= {x: 0, y: 0};
+            self.mouse_down = false;
+            self.scale = 1;
+
+            element.parentNode.replaceChild(this.renderer.domElement, element);
+            element = this.renderer.domElement;
+            element.id = "view";
+            this.renderer.setSize( view_width, view_height );
+
+            self.scene = new THREE.Scene();
+            self.camera = new THREE.OrthographicAspectCamera(
+                20, view_width / view_height, 0.1, 10000
+            );
+
+            setup_lights(self.scene);
+            setup_grid(self.scene);
+            setup_input(self, element);
+        }
     };
 
-    self.set_global_rotation = function ( object, rotation ) {
-        object.rotation.set(rotation.x, rotation.y, rotation.z);
-        // object.rotation.x = rotation.x;
-        // object.rotation.y = rotation.y;
-        // object.rotation.z = rotation.z;
+    this.View.prototype.draw_traces = function (data) {
+        if (this.traces) {
+            this.scene.remove(this.traces);
+        }
+        this.traces = new THREE.Object3D();
+        data.forEach( function (trace) {
+            var geometry = new THREE.Geometry();
+            for ( var i=0; i<trace.length; i++ ) {
+                var position = new THREE.Vector3(
+                    trace[i][0], trace[i][1], trace[i][2]);
+                geometry.vertices.push(position);
+            }
+            var line = new THREE.Line(
+                geometry, new THREE.LineBasicMaterial( {
+                    color: 0xffffff, opacity: 0.5, linewidth: 0.5} ));
+            this.traces.add(line);
+        }.bind(this));
+        this.scene.add(this.traces);
+        this.render();
+    };
 
-        // object.rotation.set(0, 0, 0);
-        // object.matrix = new THREE.Matrix4();
-        // rotateAroundWorldAxis(object, new THREE.Vector3(1, 0, 0), rotation.x);
-        // rotateAroundWorldAxis(object, new THREE.Vector3(0, 1, 0), rotation.y);
-        // rotateAroundWorldAxis(object, new THREE.Vector3(0, 0, 1), rotation.z);
+    this.View.prototype.render = function (mouse_coords) {
+	this.theta = this.start_theta - 2 * (this.mouse_pos.x - this.mouse_start.x);
+	this.phi = Math.min(Math.PI/2,
+                            Math.max(-Math.PI/2, this.start_phi + 2 *
+                                     (this.mouse_pos.y - this.mouse_start.y)));
+
+        this.camera.position.x = 40 * Math.sin(this.theta) * Math.cos(this.phi);
+        this.camera.position.y = 40 * Math.sin(this.phi);
+	this.camera.position.z = 40 * Math.cos(this.theta) * Math.cos(this.phi);
+        this.camera.width = 20 * this.scale;
+        this.camera.height = 20 * this.scale;
+        this.camera.updateProjectionMatrix();
+	this.camera.lookAt( this.scene.position );
+
+        this.renderer.render( this.scene, this.camera );
     };
 
     // Create a THREE mesh out of vertex/face lists
-    self.make_mesh = function (verts, faces) {
+    function make_mesh (verts, faces) {
         var geom = new THREE.Geometry();
         verts.forEach(function (vert) {
             geom.vertices.push(new THREE.Vector3(vert[0], vert[1], vert[2]));
@@ -199,16 +203,15 @@ var view3d = (function () {
     };
 
     // Construct a THREE object that represents an optical element
-    // with a mesh and an XYZ-axis.
-    self.make_repr = function (mesh) {
-        var obj, axis, geometry;
-        axis = new THREE.Object3D();
+    // with an XYZ-axis.
+    function make_axis () {
+        var axis = new THREE.Object3D();
         var origin = new THREE.Vector3(0, 0, 0);
         var x1 = new THREE.Vector3(1, 0, 0);
         var y1 = new THREE.Vector3(0, 1, 0);
         var z1 = new THREE.Vector3(0, 0, 1);
 
-        geometry = new THREE.Geometry();
+        var geometry = new THREE.Geometry();
         geometry.vertices.push(origin);
         geometry.vertices.push(x1);
         axis.add(new THREE.Line(geometry, new THREE.LineBasicMaterial(
@@ -226,61 +229,57 @@ var view3d = (function () {
         axis.add(new THREE.Line(geometry, new THREE.LineBasicMaterial(
             {linewidth: 2, color: 0x0000FF})));
 
-        obj = new THREE.Object3D();
-        obj.add(axis);
-        obj.add(mesh);
-
-        return {repr: obj, axis: axis};
+        return axis;
     };
 
-    var optaxis = null;
-    // Draw an "optical axis"
-    console.log("jej");
-    self.draw_optaxis = function (data) {
-        self.scene.remove(optaxis);
-        var axis = data.axis;
-        optaxis = new THREE.Object3D();
-        var geometry = new THREE.Geometry();
-        axis.forEach(function (point) {
-            var position = new THREE.Vector3(point.x, point.y, point.z);
-            geometry.vertices.push(position);
-            geometry.computeLineDistances();
-            var line = new THREE.Line(
-                geometry, new THREE.LineDashedMaterial( {
-                    color: 0xffff00, linewidth: 1.0, dashSize: 0.2, gapSize: 0.1 } ),
-                THREE.LinePiece);
-            optaxis.add(line);
-            });
-        self.scene.add(optaxis);
-        self.render();
+
+    // A representation of an item
+    this.Representation = function (view, meshdata, args) {
+        this.view = view;
+        this.obj = new THREE.Object3D();
+        this.obj.add(make_axis());
+        if (meshdata) {
+            this.set_mesh(meshdata);
+        } else {
+            this.mesh = new THREE.Mesh();
+        }
+        view.scene.add(this.obj);
+        this.update(args);
+
+        view.render();
     };
 
-    self.traces = null;
-    // draw lines representing rays going through the system
-    self.render_traces = function (data) {
-        self.scene.remove(scene.traces);
-        self.scene.traces = new THREE.Object3D();
-        data.forEach( function (trace) {
-            var geometry = new THREE.Geometry();
-            for ( var i=0; i<trace.length; i++ ) {
-                var position = new THREE.Vector3(
-                    trace[i][0], trace[i][1], trace[i][2]);
-                geometry.vertices.push(position);
-            }
-            var line = new THREE.Line(
-                geometry, new THREE.LineBasicMaterial( {
-                    color: 0xffffff, opacity: 0.5, linewidth: 0.5} ));
-            self.scene.traces.add(line);
-        });
-        self.scene.add(scene.traces);
-        self.render();
+    this.Representation.prototype.remove = function () {
+        this.view.scene.remove(this.obj);
     };
 
-    self.remove_traces = function () {
-        self.scene.remove(self.scene.traces);
-        self.render();
+    this.Representation.prototype.update = function (args) {
+        var position = args.position.value,
+            rotation = args.rotation.value,
+            offset = args.offset.value,
+            alignment = args.alignment.value,
+            radians = Math.PI / 180;
+        this.obj.position.set(position.x, position.y , position.z);
+        this.obj.rotation.set(rotation.x * radians,
+                              rotation.y * radians,
+                              rotation.z * radians);
+        this.mesh.position.set(offset.x, offset.y, offset.z);
+        this.mesh.rotation.set(alignment.x* radians,
+                               alignment.y * radians,
+                               alignment.z * radians);
+        this.view.render();
     };
 
-    return self;
+    this.Representation.prototype.set_mesh = function (meshdata) {
+        var mesh = make_mesh(meshdata.verts, meshdata.faces),
+            pos = this.mesh.position, rot = this.mesh.rotation;
+        this.obj.remove(this.mesh);
+        this.mesh = mesh;
+        this.obj.add(this.mesh);
+        mesh.position.set(pos.x, pos.y, pos.z);
+        mesh.rotation.set(rot.x, rot.y, rot.z);
+        this.view.render();
+    };
 
-}());
+    return this;
+})();

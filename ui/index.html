@@ -3,9 +3,12 @@
 <head>
   <meta charset="utf-8">
   <title>Phoray</title>
+  <!-- <link rel="stylesheet" href="css/foundation.css"> -->
+  <link rel="stylesheet" href="css/toast/toast.css">
   <link rel="stylesheet" href="css/layout.css">
   <link rel="stylesheet" href="css/app.css">
 </head>
+
 <body>
 
   <div id="sidebar">
@@ -13,105 +16,109 @@
     <span id="position"></span>
     <div id="dragbar"></div>
 
-    <div class="wrapper">
-      <div class="systems">
-        <div class="header">Systems</div>
-        <div data-bind="foreach: systems">
-          <div data-bind="click: $parent.selected,
-                          css: {selected: $parent.selected() == $data}"
-               class="system">
-            <span data-bind="text: $index"> </span>:
-            [<span data-bind="text: type"> </span>]
-          </div>
-          <div class="elements">
-            <div class="header">Sources</div>
-            <div data-bind="foreach: sources">
-              <div class="element" data-bind="click: $parents[1].select_element,
-                                              css: {selected: $parents[1].selected_element() == $data}">
-                <span data-bind="text: $index"> </span>:
-                <span data-bind="text: name"> </span>
-                [<span data-bind="text: type"> </span>]
-              </div>
-            </div>
-          </div>
-          <div class="elements">
-            <div class="header">Elements</div>
-            <div data-bind="foreach: elements">
-              <div class="element" data-bind="click: $parents[1].select_element,
-                                              css: {selected: $parents[1].selected_element() == $data}">
-                <span data-bind="text: $index"> </span>:
-                <span data-bind="text: name"> </span>
-                [<span data-bind="text: type"> </span>]
-              </div>
+    <div class="systems">
+      <div class="header">Systems</div>
+      <div class="system" data-bind="foreach: systems">
+        <div data-bind="click: $root.select_system,
+                        css: {selected: $parent.selected_system() == $data}"
+             class="item">
+          <span data-bind="text: $index"> </span>:
+          <span data-bind="text: type"> </span>
+          (<span data-bind="text: id"> </span>)
+        </div>
+        <div class="item source">
+          <div data-bind="visible: sources().length > 0" class="header">Sources</div>
+          <div data-bind="foreach: $data.sources">
+            <div class="item"
+                  data-bind="click: $root.select_element.bind($root, $data, $parent),
+                             css: {selected: $root.selected_element() == $data}">
+              <span data-bind="text: $index"> </span>:
+              <span data-bind="text: name"> </span>
+              <span data-bind="text: type"> </span>
+              (<span data-bind="text: id"> </span>)
             </div>
           </div>
         </div>
-        <button data-bind="click: add_system">Add</button>
-        <button data-bind="click: send">Send</button>
+        <div class="item element">
+          <div data-bind="visible: elements().length > 0" class="header">Elements</div>
+          <div data-bind="foreach: $data.elements">
+            <div class="item"
+                 data-bind="click: $root.select_element.bind($root, $data, $parent),
+                            css: {selected: $root.selected_element() == $data}">
+              <span data-bind="text: $index"> </span>:
+              <span data-bind="text: name"> </span>
+              <span data-bind="text: type"> </span>
+              (<span data-bind="text: id"> </span>)
+            </div>
+          </div>
+        </div>
       </div>
+    </div>
 
-      <div data-bind="visible: selected, with: selected">
-        <div class="wrapper">
-          <div class="attrib system">
-            <div class="header">System</div>
+    <div class="wrap">
+      <div class="grids">
+        <button class="grid-6" data-bind="click: add_system">Add system</button>
+        <button class="grid-6" data-bind="click: send">Send all</button>
+      </div>
+    </div>
 
-            <table>
-              <tr>
-                <td  class="label">
-                  type:
-                </td> <td>
-                  <select data-bind="value: type, options: type.choices"/>
-                </td>
-              </tr>
+    <div class="sections">
+      <div data-bind="visible: selected_system, with: selected_system" class="wrap">
+        <div class="grids section">
+          <div class="system">
+            <div class="header">
+              <div class="grid-8">system</div>
+              <div class="grid-1" data-bind="click: $parent.move_up">^</div>
+              <div class="grid-1" data-bind="click: $parent.move_down">v</div>
+              <div class="grid-1" data-bind="click: $parent.remove">X</div>
+            </div>
 
-              <!-- ko foreach: $data.schema -->
-              <tr data-bind="template: {name: 'property-' + $data.type + '-template',
-                             data: {name: $data.name, value: $parent.args()[$data.name]}}">
+            <div class="attrib">
+              <div class="grid-4 label">type</div>
+              <select class="grid-8" data-bind="value: type, options: get_types()"></select>
+            </div>
 
-              </tr>
-              <!-- /ko -->
+            <!-- ko foreach: get_properties() -->
+            <div data-bind="template: {name: 'property-' + $parent.args[$data].type + '-template',
+                            data: {name: $data, value: $parent.args[$data]}}"
+                 class="attrib">
+            </div>
+            <!-- /ko -->
 
-            </table>
-            <div>
-              <div>
-                <button data-bind="click: $data.add_source">Add Source</button>
-                <button data-bind="click: $data.add_element">Add Element</button>
-              </div> <div>
-                <button data-bind="click: $data.trace">Trace</button>
-                <button data-bind="click: $data.clear_traces">Clear trace</button>
+            <div class="wrap">
+              <div class="grids">
+                <button class="grid-6" data-bind="click: $data.add_source">Add Source</button>
+                <button class="grid-6" data-bind="click: $data.add_element">Add Element</button>
+                <button class="grid-6" data-bind="click: $data.trace">Trace</button>
+                <button class="grid-6" data-bind="click: $data.clear_traces">Clear trace</button>
               </div>
             </div>
           </div>
-
         </div>
 
-        <div class="wrapper" data-bind="visible: $parent.selected_element,
-                                        with: $parent.selected_element">
-          <div class="attrib element">
-            <div class="header">Element
-              <button data-bind="click: $parent.remove">X</button>
-              <button data-bind="click: $parent.move_up">^</button>
-              <button data-bind="click: $parent.move_down">v</button>
-              <button data-bind="click: $parent.footprint">Plot</button>
+        <div data-bind="visible: $root.selected_element, with: $root.selected_element"
+             class="grids section">
+          <div class="" data-bind="css: kind">
+            <div class="header">
+              <div class="grid-8" data-bind="text: kind"></div>
+              <div class="grid-1" data-bind="click: $parent.footprint">P</div>
+              <div class="grid-1" data-bind="click: $parent.move_up">^</div>
+              <div class="grid-1" data-bind="click: $parent.move_down">v</div>
+              <div class="grid-1" data-bind="click: $parent.remove">X</div>
             </div>
 
-            <table>
-              <tr>
-                <td  class="label">
-                  type:
-                </td> <td>
-                  <select data-bind="value: $data.type, options: type.choices"/>
-                </td>
-              </tr>
+            <div class="attrib">
+              <div class="grid-4 label"> type </div>
+              <select class="grid-8" data-bind="value: type, options: get_types()"></select>
+            </div>
 
-              <!-- ko foreach: args().schema() -->
-              <tr data-bind="template: {name: 'property-' + $data.type + '-template',
-                             data: {name: $data.name, value: $parent.args()[$data.name]}}">
+            <!-- ko foreach: get_properties() -->
+            <div data-bind="template: {name: 'property-' + $parent.args[$data].type() + '-template',
+                            data: {name: $data, value: $parent.args[$data].value}}" class="attrib">
 
-              </tr>
-              <!-- /ko -->
+            </div>
+            <!-- /ko -->
 
-            </table>
           </div>
         </div>
       </div>
@@ -127,106 +134,85 @@
     <!-- FOOTPRINT -->
   </div>
 
-  <div id="footer">
-    <!-- FOOTER -->
-  </div>
+  <!-- TEMPLATES -->
 
   <script type="text/html" id="property-string-template">
-      <td class="label" data-bind="text: name + ':'"> </td>
-      <td> <input type="text" data-bind="value: value"/> </td>
+    <div class="grid-6 label" data-bind="text: name"> </div>
+    <input class="grid-6" type="text" data-bind="value: value"/>
   </script>
 
   <script type="text/html" id="property-number-template">
-      <td class="label" data-bind="text: name + ':'"> </td>
-      <td> <input type="numeric" data-bind="value: value"/> </td>
+    <div class="grid-6 label" data-bind="text: name"> </div>
+    <input class="grid-6" type="numeric" data-bind="value: value.forceNumeric()"/>
   </script>
 
   <script type="text/html" id="property-length-template">
-      <td class="label" data-bind="text: name + ':'"> </td>
-      <td> <input type="numeric" data-bind="value: value"/> </td>
+    <div class="grid-6 label" data-bind="text: name"> </div>
+    <input class="grid-6" type="numeric" data-bind="value: value.forceNumeric()">
   </script>
 
   <script type="text/html" id="property-angle-template">
-      <td  class="label" data-bind="text: name + ':'"> </td>
-      <td> <input type="numeric" data-bind="value: value"/> </td>
+      <div class="grid-6 label" data-bind="text: name"> </div>
+      <input class="grid-6" type="numeric" data-bind="value: value.forceNumeric()">
   </script>
 
   <script type="text/html" id="property-position-template">
-      <td colspan="2">
-        <div class="label3" data-bind="text: name + ':'"> </div>
-        <div class="geometry">
-          <table> <tr>
-            </tr><tr class="geometry">
-              <td class="label"> x: </td>
-              <td> <input type="numeric" data-bind="value: value.x"/></td>
-              <td class="label"> y: </td>
-              <td> <input type="numeric" data-bind="value: value.y"/></td>
-              <td class="label"> z: </td>
-              <td> <input type="numeric" data-bind="value: value.z"/></td>
-            </tr>
-          </table>
-        </div>
-      </td>
-  </script>
+    <div class="grid-12 label" data-bind="text: name"> </div>
 
-  <script type="text/html" id="property-rotation-template">
-      <td colspan="2">
-        <div class="label3" data-bind="text: name + ':'"> </div>
-        <div class="geometry">
-          <table>
-            <tr>
-              <td> x: </td>
-              <td><input type="numeric" data-bind="value: value.x"/></td>
-              <td> y: </td>
-              <td><input type="numeric" data-bind="value: value.y"/></td>
-              <td> z: </td>
-              <td><input type="numeric" data-bind="value: value.z"/></td>
-            </tr>
-          </table>
-        </div>
-      </td>
+    <div class="attrib">
+      <div class="grid-1 to-right"> x: </div>
+      <input class="grid-3" type="numeric" data-bind="value: value.x.forceNumeric()">
+
+      <div class="grid-1 to-right"> y: </div>
+      <input class="grid-3" type="numeric" data-bind="value: value.y.forceNumeric()">
+
+      <div class="grid-1 to-right"> z: </div>
+      <input class="grid-3" type="numeric" data-bind="value: value.z.forceNumeric()">
+    </div>
   </script>
 
   <script type="text/html" id="property-geometry-template">
-    <td colspan="2">
-      <div class="label2" data-bind="text: name + ':'"></div>
-      <div class="geometry">
-        <table>
-          <tr>
-            <td>Type:</td>
-            <td>
-              <select data-bind="value: value.type, options: value.type.choices"></select>
-            </td>
-          </tr>
-          <!-- ko with: value.args() -->
-          <!-- ko foreach: $data.schema() -->
-          <tr data-bind="template: {name: 'property-' + $data.type + '-template',
-                         data: {name: $data.name, value: $parent[$data.name]}}">
-          </tr>
+    <div>
+      <div class="grid-12 label">geometry:</div>
+
+      <div class="attrib">
+        <div class="subsection">
+          <div class="attrib">
+            <div class="grid-4 label"> type: </div>
+            <select class="grid-8" data-bind="value: value.type, options: value.get_types()"></select>
+          </div>
+
+          <!-- ko with: value -->
+          <!-- ko foreach: $data.get_properties() -->
+          <div data-bind="template: {name: 'property-' + $parent.args[$data].type() + '-template',
+                          data: {name: $data, value: $parent.args[$data].value}}" class="attrib">
+          </div>
           <!-- /ko -->
           <!-- /ko -->
-        </table>
+        </div>
       </div>
-    </td>
+
+    </div>
   </script>
 
 
-  <script src="js/libs/knockout.js"></script>
-  <script src="js/libs/knockout.mapping.js"></script>
+  <script src="js/libs/knockout-2.2.1.debug.js"></script>
   <script src="js/libs/ko.observableDictionary.js"></script>
   <script src="js/libs/knockout.mapping-latest.js"></script>
-  <script src="js/libs/ko.numeric.js"></script>
+
   <script src="js/libs/three.js"></script>
   <script src="js/libs/OrthographicAspectCamera.js"></script>
   <script src="js/libs/TrackballControls.js"></script>
   <script src="js/libs/Detector.js"></script>
+
   <script src="js/libs/jquery-1.8.3.min.js"></script>
   <script src="js/libs/d3.js"></script>
   <script src="js/libs/jquery.flot.js"></script>
 
-  <script src="js/scene.js"></script>
+  <script src="js/knockout-utils.js"></script>
+  <script src="js/scene2.js"></script>
   <script src="js/plot.js"></script>
-  <script src="js/phoray.js"></script>
+  <script src="js/main.js"></script>
 
   <script>
 
@@ -241,8 +227,8 @@
 
         e.preventDefault();
         document.onmousemove = function(e) {
-          sidebar.style.width = e.pageX+2 + "px";
-          view.style.left = e.pageX+2 + "px";
+          sidebar.style.width = e.pageX + "px";
+          view.style.left = e.pageX + "px";
        };
        console.log("leaving mouseDown");
    };

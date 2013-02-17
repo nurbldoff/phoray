@@ -19,7 +19,8 @@ PLUGIN_DIR = "plugins"
 plugins = [os.path.splitext(mod)[0]
            for mod in os.listdir(PLUGIN_DIR) if mod.endswith(".py")]
 plugin_classes = [
-    (plugin + "." + name, cls)
+    #(plugin + "." + name, cls)
+    (name, cls)
     for plugin, module
     in ((plug, load_module(plug, *find_module(plug, [PLUGIN_DIR])))
         for plug in sorted(plugins))
@@ -59,21 +60,31 @@ schemas = dict(System=OrderedDict((name, {})
 
 def create_geometry(spec):
     cls = surface_classes.get(spec["type"])
-    args = spec["args"]
-    return cls(**args)
+    print "geometry spec"
+    pprint(spec)
+    args = dict((name, prop["value"])
+                for name, prop in spec["args"].items())
+    geometry = cls(**args)
+    geometry.id = spec["id"]
+    return geometry
 
 
 def create_element(spec):
     cls = element_classes[spec["type"]]
-    args = spec["args"]
+    print "eleent spec", spec["type"], spec["args"].items()
+    args = dict((name, prop["value"]) for name, prop in spec["args"].items())
     args["geometry"] = create_geometry(args["geometry"])
-    return cls(**args)
+    element = cls(**args)
+    element.id = spec["id"]
+    return element
 
 
 def create_source(spec):
     cls = source_classes.get(spec["type"])
-    args = spec["args"]
-    return cls(**args)
+    args = dict((name, prop["value"]) for name, prop in spec["args"].items())
+    source = cls(**args)
+    source.id = spec["id"]
+    return source
 
 
 @route('/')
@@ -88,8 +99,8 @@ def staticpath(filepath):
 
 @get('/schema')
 def get_schema():
-    pprint(schemas["System"])
-    pprint(schemas["Element"])
+    # pprint(schemas["System"])
+    # pprint(schemas["Element"])
 
     return {"system": schemas["System"],
             "geometry": schemas["Surface"],
@@ -107,13 +118,13 @@ def define_system():
     query = request.json
     #pprint(query)
     specs = copy.deepcopy(query)
-    print "specs"
-    pprint(specs)
 
     for spec in specs["systems"]:
+        print "system spec"
         pprint(spec)
         sys_class = system_classes[spec["type"]]
         system = sys_class()
+        system.id = spec["id"]
 
         for ele_spec in spec["elements"]:
             emt = create_element(ele_spec)
@@ -150,8 +161,13 @@ def define_system():
 
     # pprint([util.system_to_dict(system, system_schema)
     #         for i, system in enumerate(optical_systems)])
+    print "difference:"
     pprint(diff)
-    return self.get_system()["systems"]
+    if any(diff):
+        return get_system()
+    else:
+        return dict(systems=[])
+    #return dict(systems=diff)
 
 
 @post('/add_system')
@@ -202,7 +218,8 @@ def get_system():
             elements.append(util.object_to_dict(element, schemas))
         for source in system.sources:
             sources.append(util.object_to_dict(source, schemas))
-        systems.append(dict(elements=elements, sources=sources))
+        sysdict = util.system_to_dict(system, schemas)
+        systems.append(sysdict)
     print "sending systems", systems
     return dict(systems=systems)
 

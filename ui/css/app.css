@@ -1,31 +1,21 @@
 /* app css stylesheet */
 
 body {
-    font-size: x-small;
+    font-size: small;
     font-family: sans;
+}
+
+.wrap {
+    padding: 5px;
 }
 
 #sidebar {
     background: #bbb;
+    overflow: auto;
 }
 
 #view {
     background: #444;
-}
-
-
-input {
-    width: 100%;
-}
-
-select {
-    width: 100%;
-}
-
-div.wrapper {
-    padding: 5px 5px 0 5px;
-    overflow-y: auto;
-    max-height: 100%;
 }
 
 div.systems {
@@ -33,33 +23,48 @@ div.systems {
     background-color: #eee;
     border-width: 2px;
     border-color: black;
-    max-height: 30%;
-    overflow: auto;
 }
 
-
-.systems .system {
-    padding-top: 1px;
+.systems .item {
+    margin-left: 20px;
+    padding-left: 5px;
 }
-
-div.sources {
-    padding-left: 10px;
-    padding-top: 10px;
-}
-
-div.elements {
-    padding-left: 10px;
-    padding-top: 3px;
-}
-
-.systems .element {
-    padding-top: 1px;
-    padding-left: 10px;
-}
-
-.systems div.header {
+.systems .header {
     font-weight: bold;
     text-align: left;
+}
+
+.systems .selected {
+    color: white;
+}
+
+.sections {
+
+}
+
+.section {
+    margin: 0 0 5px 0;
+    border: 2px solid #999;
+    border-radius: 5px;
+}
+
+.section .system {
+    background-color: #ec7;
+}
+
+.section .source {
+    background-color: #bcf;
+}
+
+.section .element {
+    background-color: #9d9;
+}
+
+
+.section .header {
+    color: white;
+    padding: 2px;
+    border-radius: 3px 3px 0 0;
 }
 
 .systems .selected {
@@ -67,32 +72,38 @@ div.elements {
     background: #88f;
 }
 
-.attrib {
-    padding-bottom: 5px;
+.section .system .header, .systems .system .selected {
+    background: #983;
 }
 
-.attrib div.header {
-    font-size: small;
-    text-align: left;
-    color: white;
-    width: 100%;
-    background-color: #777;
-    padding: 2px;
-    border-radius: 3px;
+.section .source .header, .systems .source .selected {
+    background: #78a;
+}
+
+.section .element .header, .systems .element .selected {
+    background: #696;
+}
+
+.subsection {
+    padding: 5px;
+}
+
+.attrib {
+    padding: 3px;
 }
 
 .label {
+    border-bottom: 1px solid #888;
+    font-weight: bold;
+}
+
+.to-center {
+    text-align: center;
+}
+
+.to-right {
     text-align: right;
 }
-
-.label2 {
-    text-align: center;
-}
-
-.label3 {
-    text-align: center;
-}
-
 
 .geometry {
     border: solid #888 1px;

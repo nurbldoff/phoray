@@ -46,36 +46,40 @@ def object_to_dict(obj, schema):
                                           source.Source)
                if isinstance(obj, kind)][0]
     objdict = dict(type=objtype, args={})
+    print objkind, objtype
     for name in schema[objkind][objtype]:
         value = getattr(obj, name)
         objdict["args"][name] = convert_attr(value, schema)
+    objdict["id"] = obj.id
     return objdict
 
 
-def system_to_dict(obj, schema):
+def system_to_dict(obj, schemas):
+    schema = schemas["System"]
     objdict = dict(type=obj.__class__.__name__, args={})
     for name in schema[objdict["type"]]:
         value = getattr(obj, name)
         objdict["args"][name] = convert_attr(value, schema)
-    objdict["elements"] = [object_to_dict(el, schema) for el in obj.elements]
-    objdict["sources"] = [object_to_dict(so, schema) for so in obj.sources]
+    objdict["elements"] = [object_to_dict(el, schemas) for el in obj.elements]
+    objdict["sources"] = [object_to_dict(so, schemas) for so in obj.sources]
+    objdict["id"] = obj.id
     return objdict
 
 
 def convert_attr(attr, schema):
     if isinstance(attr, Vec):
         x, y, z = attr
-        return dict(x=x, y=y, z=z)
+        return dict(type="position", value=dict(x=x, y=y, z=z))
     elif isinstance(attr, surface.Surface):
-        return object_to_dict(attr, schema)
+        return dict(type="geometry", value=object_to_dict(attr, schema))
     else:
-        return attr
+        return dict(type="number", value=attr)
 
 
 def signature(cls):
     signature = OrderedDict()
     bases = inspect.getmro(cls)
-    for base in reversed(bases[:-1]):  # skip the object class
+    for base in (bases[:-1]):  # skip the object class
         spec = inspect.getargspec(base.__init__)
         if len(spec.args[1:]) != len(spec.defaults):
             print ("The init function for %s is missing default arguments!" %
@@ -90,7 +94,7 @@ def signature(cls):
                 value = dict(x=value.x, y=value.y, z=value.z)
             elif argtype == surface.Surface:
                 argtype = "geometry"
-                value = 0
+                value = None
             elif argtype in (int, float):
                 argtype = "number"
             signature[arg] = dict(type=str(argtype), value=value)

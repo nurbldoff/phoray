@@ -111,6 +111,8 @@ class Sequential(OpticalSystem):
 
     def update(self):
         print "update"
+        if not self.sources:
+            return
         source = self.sources[0]
         position = source.position
         rotation = source.rotation
