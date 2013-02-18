@@ -52,7 +52,7 @@ var view3d = (function () {
             view.mouse_down = true;
         };
 
-        element.onmouseup = function ( event ) {
+        element.onmouseup = element.onmouseout = function ( event ) {
             view.mouse_down = false;
         };
 
@@ -101,6 +101,7 @@ var view3d = (function () {
     this.View = function (element) {
         var self = this;
         self.traces = null;
+        this.traces = new THREE.Object3D();
 
         if (!Detector.webgl) {
             var warning = Detector.getWebGLErrorMessage();
@@ -136,23 +137,34 @@ var view3d = (function () {
         }
     };
 
-    this.View.prototype.draw_traces = function (data) {
+    this.View.prototype.clear_traces = function () {
         if (this.traces) {
             this.scene.remove(this.traces);
+            this.traces = new THREE.Object3D();
         }
-        this.traces = new THREE.Object3D();
-        data.forEach( function (trace) {
-            var geometry = new THREE.Geometry();
-            for ( var i=0; i<trace.length; i++ ) {
-                var position = new THREE.Vector3(
-                    trace[i][0], trace[i][1], trace[i][2]);
-                geometry.vertices.push(position);
-            }
-            var line = new THREE.Line(
-                geometry, new THREE.LineBasicMaterial( {
-                    color: 0xffffff, opacity: 0.5, linewidth: 0.5} ));
-            this.traces.add(line);
-        }.bind(this));
+    };
+
+    var color_from_string = function (s) {
+        return parseInt(s.slice(1), 16);
+    };
+
+    this.View.prototype.draw_traces = function (data, colors) {
+        for (var system in data) {
+            var tmpdata = data[system];
+            tmpdata.forEach( function (trace) {
+                var geometry = new THREE.Geometry();
+                for ( var i=0; i<trace.length; i++ ) {
+                    var position = new THREE.Vector3(
+                        trace[i][0], trace[i][1], trace[i][2]);
+                    geometry.vertices.push(position);
+                }
+                var line = new THREE.Line(
+                    geometry, new THREE.LineBasicMaterial( {
+                        color: color_from_string(colors[system]),
+                        opacity: 0.5, linewidth: 0.5} ));
+                this.traces.add(line);
+            }.bind(this));
+        }
         this.scene.add(this.traces);
         this.render();
     };

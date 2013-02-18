@@ -66,11 +66,14 @@ def system_to_dict(obj, schemas):
 
 
 def convert_attr(attr, schema):
+    print "convert attr", attr, type(attr)
     if isinstance(attr, Vec):
         x, y, z = attr
         return dict(type="position", value=dict(x=x, y=y, z=z))
     elif isinstance(attr, surface.Surface):
         return dict(type="geometry", value=object_to_dict(attr, schema))
+    elif isinstance(attr, unicode):
+        return dict(type="string", value=attr)
     else:
         return dict(type="number", value=attr)
 
@@ -96,5 +99,7 @@ def signature(cls):
                 value = None
             elif argtype in (int, float):
                 argtype = "number"
+            elif argtype == str:
+                argtype = "string"
             signature[arg] = dict(type=str(argtype), value=value)
     return signature

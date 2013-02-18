@@ -26,14 +26,6 @@ body,html{
    overflow-y: hidden;
 }
 
-#footprint {
-    position: absolute;
-    width: 300px;
-    height: 300px;
-    top: 0;
-    right: 0;
-    pointer-events: none;
-}
 
 #footer{
     width:100%;
@@ -53,4 +45,20 @@ body,html{
    float: right;
    width: 3px;
    cursor: col-resize;
+}
+
+input:not([type=submit]):not([type=file]) {
+    border: 1px solid #bbb;
+}
+
+input[type=number] {
+    text-align: right;
+}
+
+/* Get rid of the tiny arrow buttons on number fields in chrome */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+    /* display: none; <- Crashes Chrome on hover */
+    -webkit-appearance: none;
+    margin: 0; /* <-- Apparently some margin are still there even though it's hidden */
 }

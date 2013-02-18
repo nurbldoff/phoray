@@ -77,6 +77,8 @@ def create_element(spec):
 
 
 def create_source(spec):
+    print "source spec"
+    pprint(spec)
     cls = source_classes.get(spec["type"])
     args = dict((name, prop["value"]) for name, prop in spec["args"].items())
     source = cls(**args)
@@ -149,6 +151,8 @@ def define_system():
             system_diff["sources"] = source_diffs
         diff.append(system_diff)
 
+    print "diff"
+    pprint(diff)
     if any(diff):
         return get_system()
     else:
@@ -220,25 +224,22 @@ def axis():
 def trace():
     """Trace the paths of a number of rays through a system."""
     query = request.query
+    system = optical_systems[int(query.system)]
+
     n = int(query.n)  # number of rays to trace
+    result = {}
 
-    result = []
-
-    for system in optical_systems:
-        traces = system.trace(n)
-        for trace in traces:
-            step = []
-            start = trace[0].endpoint
-            for ray in trace:
-                x, y, z = ray.endpoint
-                step.append((x, y, z))
-                start = ray.endpoint
-            if ray.direction is None:
-                end = ray.endpoint
+    for i, source in enumerate(system.sources):
+        traces = []
+        for ray in source.generate(n):
+            tmp = [tuple(r.endpoint) for r in system.propagate(ray, i)]
+            if r.direction is None:
+                pass
             else:
-                end = ray.endpoint + ray.direction * 1
-            step.append((end.x, end.y, end.z))
-            result.append(step)
+                tmp.append(tuple(r.endpoint + r.direction * 1))
+            traces.append(tmp)
+        result[i] = traces
+
     return {"traces": result}
 
 

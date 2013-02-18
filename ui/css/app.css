@@ -41,6 +41,11 @@ div.systems {
     color: white;
 }
 
+.swatch {
+    height: 20px;
+    width: 20px;
+}
+
 .sections {
 
 }

@@ -1,5 +1,6 @@
 from __future__ import division
 from math import *
+from collections import defaultdict
 
 from member import Member
 from surface import Surface
@@ -15,16 +16,18 @@ class Element(Member):
                  geometry=Surface()):
         self.geometry = geometry
         Member.__init__(self, position, rotation, offset, alignment)
-        self.footprint = []
+        self.footprint = defaultdict(list)
 
-    def propagate(self, ray):
+    def propagate(self, ray, source=0):
         """
         Takes a ray in global coordinates and returns the ray that
         results from interacting with the surface (e.g. reflection)
         """
         new_ray = self._propagate(ray)
         if new_ray is not None:
-            self.footprint.append((new_ray.endpoint.x, new_ray.endpoint.y))
+            self.footprint[source].append((new_ray.endpoint.x,
+                                           new_ray.endpoint.y,
+                                           new_ray.wavelength))
         return new_ray
 
 

@@ -31,7 +31,7 @@ class OpticalSystem(object):
         """
         pass
 
-    def propagate(self, ray):
+    def propagate(self, ray, system):
 
         """The given ray is traced from a source through each element, until it
         misses one or none are left. It is up to each element how to
@@ -46,7 +46,7 @@ class OpticalSystem(object):
         for el in self.elements:
             if ray.direction is None:
                 break
-            ray = el.propagate(ray)
+            ray = el.propagate(ray, system)
             if ray is None:
                 break
             trace.append(ray)
@@ -58,9 +58,10 @@ class OpticalSystem(object):
         for element in self.elements:
             element.footprint = []
 
-        for source in self.sources:
+        for i, source in enumerate(self.sources):
             for ray in source.generate(n):
-                yield self.propagate(ray)
+                trace = self.propagate(ray, i)
+                yield i, trace
 
     def axis(self, source=0):
         if self.sources:
