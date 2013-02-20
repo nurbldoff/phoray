@@ -204,19 +204,11 @@ class Sphere(Surface):
             #print "backlit"
             #return None
 
-        #a = ray.endpoint
         a = ray.endpoint + Vec(0, 0, self.R)
-        b = a + r
-        R2 = self.R ** 2
 
         t = quadratic(r.z ** 2 + r.x ** 2 + r.y ** 2,
                       2 * a.z * r.z + 2 * a.x * r.x + 2 * a.y * r.y,
                       a.z ** 2 + a.x ** 2 + a.y ** 2 - self.R ** 2)
-
-        # t = quadratic((b.z - a.z) ** 2 + (b.x - a.x) ** 2 + (b.y - a.y) ** 2,
-        #               2 * a.z * (b.z - a.z) + 2 * a.x * (b.x - a.x) +
-        #               2 * a.y * (b.y - a.y),
-        #               a.z ** 2 + a.x ** 2 + a.y ** 2 - self.R ** 2)
 
         if t is None or type(t[0]) is complex or t < 0:  # no
             # intersection
