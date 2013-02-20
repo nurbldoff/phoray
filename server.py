@@ -157,7 +157,7 @@ def define_system():
     if any(diff):
         return get_system()
     else:
-        return dict(systems=[])
+        return dict()
     #return dict(systems=diff)
 
 

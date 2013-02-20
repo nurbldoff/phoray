@@ -4,30 +4,17 @@
         curr_id = 0,
         view = new view3d.View(document.getElementById("view"));
 
-    // function uniqueid(){
-    //     // always start with a letter (for DOM friendlyness)
-    //     var idstr=String.fromCharCode(Math.floor((Math.random()*25)+65));
-    //     do {
-    //         // between numbers and characters (48 is 0 and 90 is Z (42-48 = 90)
-    //         var ascicode=Math.floor((Math.random()*42)+48);
-    //         if (ascicode<58 || ascicode>64){
-    //             // exclude all chars between : (58) and @ (64)
-    //             idstr+=String.fromCharCode(ascicode);
-    //         }
-    //     } while (idstr.length<32);
 
-    //     return (idstr);
-    // }
-
-    // Helper to create a JS model from schema, with optional defaults
+    // Helper to create a JS model from schema, with optional default values
     var create = function(schemas, kind, type, old) {
         var obj = {type: type, args: {}},
             schema = schemas[kind][type];
         for (var property in schema) {
             var subtype = schema[property].type;
             if (subtype == "geometry") {
-                var oldgeo = (old && old.args.geometry) || null;
-                obj.args[property] = create(schemas, "geometry", "Plane", oldgeo);
+                var oldgeo = (old && old.args.geometry) || null,
+                    geotype = (oldgeo && oldgeo.type) || "Plane";
+                obj.args[property] = create(schemas, "geometry", geotype, oldgeo);
             } else {
                 var value = (old && property in old.args && old.args[property]) ||
                         schema[property].value;
@@ -44,7 +31,7 @@
 
         var self = this;
 
-        // If the type of the element is changed, we need to regenerate from schema
+        // If the type of the item is changed, we need to regenerate from schema
         self.type.subscribe(function (type) {
             var data = create(schemas, self.kind, type, ko.mapping.toJS(self));
             for (var prop in self.args) {
@@ -221,42 +208,41 @@
 
                   // Start listening for any changes in the model, and
                   // if they happen, send everything to the server.
-                  self.listener = ko.computed(function () {
+                  self.listener = ko.pauseableComputed(function () {
                       self.send();
-                  });  // .extend({throttle: 0});
+                  });  //.extend({throttle: 1}));
+
               });
 
         self.update = function (data) {
-            var sys_index = self.systems.indexOf(self.selected_system()),
-                ele_index = self.selected_system().elements().indexOf(self.selected_system());
-            ko.mapping.fromJS(data.systems, self.mapping, self.systems);
-            if (sys_index >= 0) {
-                self.selected_system(self.systems()[sys_index]());
-            }
-            if (ele_index >= 0) {
-                self.selected_element(self.selected_system().elements[sys_index]());
-            }
+            // FIXME: We need to avoid sending lots of times (and potential loops)
+            // since the mapping update is not done atomically.
+            // This is a crude way of doing it.
+            self.listener.pause();
+            ko.mapping.fromJS(data, self.mapping, self);
+            self.listener.resume();
         };
 
         self.send = function () {
             var data = ko.mapping.toJS(self);
-            console.log("send", data);
-            $.ajax({url: "/system", type: "POST",
-                    data: JSON.stringify(data), contentType: "application/json",
-                    success: function (data) {
-                        //self.set(data);
-                        console.log("got", data);
-                        if (data.systems.length > 0) {
-                            // This means the system generated on the server was different
-                            // from the client's one, so we have to update it. Could this
-                            // lead to a loop?
-                            self.update(data);
-                        }
-                        var system = self.selected_system();
-                        if (system) {
-                            self.trace();
-                        }
-                    }});
+            if (!self.do_not_send) {
+                console.log("send", data);
+                $.ajax({url: "/system", type: "POST",
+                        data: JSON.stringify(data), contentType: "application/json",
+                        success: function (data) {
+                            //self.set(data);
+                            console.log("got", data);
+                            if (data.systems) {
+                                // This means the system generated on the server was different
+                                // from the client's one, so we have to update it.
+                                self.update(data);
+                            }
+                            var system = self.selected_system();
+                            if (system) {
+                                self.trace();
+                            }
+                        }});
+            }
         };
 
         self.trace = function () {
@@ -339,6 +325,7 @@
         self.select_element = function (element, system) {
             self.selected_system(system);
             self.selected_element(element);
+            console.log("select_element", self.selected_element());
         };
 
         self.remove_element = function () {

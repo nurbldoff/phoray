@@ -166,9 +166,14 @@
     <input class="grid-6" type="number" data-bind="value: value.forceNumeric()"/>
   </script>
 
+  <script type="text/html" id="property-integer">
+    <div class="grid-6 label" data-bind="text: name"> </div>
+    <input class="grid-6" type="number" data-bind="value: value.forceInteger()"/>
+  </script>
+
   <script type="text/html" id="property-length">
     <div class="grid-6 label" data-bind="text: name"> </div>
-    <input class="grid-6" type="number" data-bind="value: value.forceNonZero()" notEqual="5">
+    <input class="grid-6" type="number" data-bind="value: value.forceNonZero()">
   </script>
 
   <script type="text/html" id="property-angle">
@@ -217,7 +222,6 @@
 
 
   <script src="js/libs/knockout-2.2.1.debug.js"></script>
-  <script src="js/libs/ko.observableDictionary.js"></script>
   <script src="js/libs/knockout.mapping-latest.js"></script>
   <script src="js/libs/knockout.validation.js"></script>
 
@@ -230,7 +234,6 @@
   <script src="js/libs/jquery-ui-1.10.1.custom/js/jquery-ui-1.10.1.custom.js"></script>
   <script src="js/libs/d3.js"></script>
   <script src="js/libs/jquery.flot.js"></script>
-
   <script src="js/libs/knockout-jqueryui.min.js"></script>
 
   <script src="js/knockout-utils.js"></script>

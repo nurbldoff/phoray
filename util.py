@@ -92,8 +92,8 @@ def signature(cls):
             return None
         for i, arg in enumerate(spec.args[1:]):
             value = spec.defaults[i]
-            #print "value", value
             argtype = type(value)
+            print "value", value, "argtype", argtype
             if argtype in (Vec, Position):
                 argtype = "position"
                 value = value.dict()
@@ -103,7 +103,7 @@ def signature(cls):
             elif argtype == Length:
                 argtype = "length"
             elif argtype == int:
-                argtype == "integer"
+                argtype = "integer"
             elif argtype == float:
                 argtype = "number"
             elif argtype == str:

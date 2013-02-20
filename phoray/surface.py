@@ -13,7 +13,7 @@ class Surface(object):
     Should not be instantiated but serves as a base class to be inherited.
     """
 
-    def __init__(self, xsize=1.0, ysize=1.0):
+    def __init__(self, xsize=Length(1.0), ysize=Length(1.0)):
         self.xsize, self.ysize = xsize, ysize
 
     def intersect(self, r):
@@ -141,7 +141,7 @@ class Plane(Surface):
         r = ray.direction
 
         if ray.direction.z < 0:  # backlit
-            print "backlit"
+            #print "backlit"
             return None
 
         a = ray.endpoint
@@ -210,7 +210,7 @@ class Sphere(Surface):
                       2 * a.z * r.z + 2 * a.x * r.x + 2 * a.y * r.y,
                       a.z ** 2 + a.x ** 2 + a.y ** 2 - self.R ** 2)
 
-        if t is None or type(t[0]) is complex or t < 0:  # no
+        if t is None or t < 0:  # no
             # intersection
             print "missed"
             return None
@@ -256,7 +256,7 @@ class Sphere(Surface):
 
 class Cylinder(Surface):
 
-    def __init__(self, R=1, *args, **kwargs):
+    def __init__(self, R=Length(1.0), *args, **kwargs):
         self.R = R
         kwargs["ysize"] = min(kwargs["ysize"], abs(R * 1.5))
         Surface.__init__(self, *args, **kwargs)
@@ -277,7 +277,7 @@ class Cylinder(Surface):
                       2 * a.z * (b.z - a.z) + 2 * a.y * (b.y - a.y),
                       a.z ** 2 + a.y ** 2 - self.R ** 2)
 
-        if t is None or type(t[0]) is complex or t < 0:  # no intersection
+        if t is None or t < 0:  # no intersection
             return None
         else:
             if self.R > 0:
@@ -318,7 +318,8 @@ class Cylinder(Surface):
 
 class Ellipsoid(Surface):
 
-    def __init__(self, a=1, b=1, c=1, *args, **kwargs):
+    def __init__(self, a=Length(1.0), b=Length(1.0), c=Length(1.0),
+                 *args, **kwargs):
         self.a, self.b, self.c = a, b, c
         kwargs["xsize"] = min(kwargs["xsize"], abs(a))
         kwargs["ysize"] = min(kwargs["ysize"], abs(b))
@@ -338,17 +339,16 @@ class Ellipsoid(Surface):
         a, b, c = self.a, self.b, self.c
         r = ray.direction
         p0 = ray.endpoint + Vec(0, 0, c)
-        p1 = p0 + r
 
         t = quadratic(
-            (p1.z - p0.z) ** 2 + c ** 2 * (p1.x - p0.x) ** 2 / a ** 2 +
-                c ** 2 * (p1.y - p0.y) ** 2 / b ** 2,
-            2 * p0.z * (p1.z - p0.z) + c ** 2 * 2 * p0.x * (p1.x - p0.x) /
-                a ** 2 + c ** 2 * 2 * p0.y * (p1.y - p0.y) / b ** 2,
+            r.z ** 2 + c ** 2 * r.x ** 2 / a ** 2 +
+                c ** 2 * r.y ** 2 / b ** 2,
+            2 * p0.z * r.z + c ** 2 * 2 * p0.x * r.x /
+                a ** 2 + c ** 2 * 2 * p0.y * r.y / b ** 2,
             p0.z ** 2 + c ** 2 * p0.x ** 2 / a ** 2 + c ** 2 * p0.y ** 2 /
                 b ** 2 - c ** 2)
 
-        if t is None or type(t[0]) is complex:  # no intersection
+        if t is None:  # no intersection
             return None
         else:
             # Figure out which intersection we should use
@@ -393,7 +393,8 @@ class Paraboloid(Surface):
     A paraboloid (rotated parabola) described by z/c = (x/a)^2 + (y/b)^2
     """
 
-    def __init__(self, a=1, b=1, c=1, *args, **kwargs):
+    def __init__(self, a=Length(1.0), b=Length(1.0), c=Length(1.0),
+                 *args, **kwargs):
         self.a = a
         self.b = b
         self.c = c

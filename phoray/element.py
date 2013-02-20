@@ -80,7 +80,7 @@ class ReflectiveGrating(Element):
 
     """A reflective grating diffracts incoming rays reflectively."""
 
-    def __init__(self, d=0, order=0, *args, **kwargs):
+    def __init__(self, d=0., order=0., *args, **kwargs):
         """
         Define a reflecting element with geometry shape given by s. If
         d>0 it will work as a grating with line spacing d and lines in
