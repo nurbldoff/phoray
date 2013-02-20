@@ -175,6 +175,8 @@
         self.selected_system = ko.observable(null);
         self.selected_element = ko.observable(null);
 
+        self.tracing = false;  // flag used to block new traces while tracing
+
         self.mapping = {
             systems: {
                 key: function(data) {
@@ -205,12 +207,11 @@
                       curr_id = Math.max(curr_id, sys.id);
                   });
                   ko.mapping.fromJS(data, self.mapping, self);
-
                   // Start listening for any changes in the model, and
                   // if they happen, send everything to the server.
                   self.listener = ko.pauseableComputed(function () {
                       self.send();
-                  });  //.extend({throttle: 1}));
+                  }); //.extend({throttle: 10});
 
               });
 
@@ -225,33 +226,39 @@
 
         self.send = function () {
             var data = ko.mapping.toJS(self);
-            if (!self.do_not_send) {
-                console.log("send", data);
-                $.ajax({url: "/system", type: "POST",
-                        data: JSON.stringify(data), contentType: "application/json",
-                        success: function (data) {
-                            //self.set(data);
-                            console.log("got", data);
-                            if (data.systems) {
-                                // This means the system generated on the server was different
-                                // from the client's one, so we have to update it.
-                                self.update(data);
-                            }
-                            var system = self.selected_system();
-                            if (system) {
-                                self.trace();
-                            }
-                        }});
-            }
+            console.log("send", data);
+            $.ajax({url: "/system", type: "POST",
+                    data: JSON.stringify(data), contentType: "application/json",
+                    success: function (data) {
+                        //self.set(data);
+                        console.log("got", data);
+                        if (data.systems) {
+                            // This means the system generated on the server was different
+                            // from the client's one, so we have to update it.
+                            self.update(data);
+                        }
+                        var system = self.selected_system();
+                        if (system) {
+                            self.trace();
+                        }
+                    }});
         };
 
-        self.trace = function () {
-            $.get("/trace", {n: 100, system: self.systems.indexOf(self.selected_system())},
-                  function (data) {
-                      view.clear_traces();
-                      view.draw_traces(data.traces, self.selected_system().sources().map(
-                          function(src) {return src.args.color()}));
-                  });
+        // Ask the server to trace some rays for us
+        self.trace = function (n) {
+            n = n || 100;
+            if (!self.tracing) {
+                // No more tracing until we're done with this one. Primitive, but it will
+                // have to do until the server is more asynchronous.
+                self.tracing = true;
+                $.get("/trace", {n: n, system: self.systems.indexOf(self.selected_system())},
+                      function (data) {
+                          view.clear_traces();
+                          view.draw_traces(data.traces, self.selected_system().sources().map(
+                              function(src) {return src.args.color();}));
+                          self.tracing = false;
+                      });
+            }
         };
 
         $( "#footprint" ).dialog({ autoOpen: false, width: 300, height: 300 });

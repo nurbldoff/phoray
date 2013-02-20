@@ -101,6 +101,7 @@
               <div class="grids">
                 <button class="grid-6" data-bind="click: $root.add_source">Add Source</button>
                 <button class="grid-6" data-bind="click: $root.add_element">Add Element</button>
+
                 <button class="grid-6" data-bind="click: $data.trace">Trace</button>
                 <button class="grid-6" data-bind="click: $data.clear_traces">Clear trace</button>
               </div>
@@ -114,7 +115,8 @@
             <div class="header">
               <div class="grid-8">
                 <span data-bind="text: kind"></span>
-                <span data-bind="text: $root.selected_system()[kind + 's'].indexOf($data)"> </span>
+                <span data-bind="text: $root.selected_system()[kind + 's'].indexOf($data)">
+                </span>
               </div>
 
               <span data-bind="click: $root.footprint"
@@ -204,7 +206,8 @@
         <div class="subsection">
           <div class="attrib">
             <div class="grid-4 label"> type: </div>
-            <select class="grid-8" data-bind="value: value.type, options: value.get_types()"></select>
+            <select class="grid-8"
+                    data-bind="value: value.type, options: value.get_types()"></select>
           </div>
 
           <!-- ko with: value -->

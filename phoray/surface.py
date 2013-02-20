@@ -100,7 +100,7 @@ class Surface(object):
         Refurns the refracted ray given an incident ray.
         Uses Snell's law.
 
-        FIXME: I don't think this is quite right.
+        FIXME: Check that this is correct.
         """
         P = self.intersect(ray)
         print P
