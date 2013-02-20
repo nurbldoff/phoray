@@ -3,6 +3,7 @@ import inspect
 
 from phoray import surface, element, source
 from phoray.minivec import Vec
+from phoray import Length, Position, Rotation
 
 
 def list_to_dict(l):
@@ -68,17 +69,19 @@ def system_to_dict(obj, schemas):
 def convert_attr(attr, schema):
     print "convert attr", attr, type(attr)
     if isinstance(attr, Vec):
-        x, y, z = attr
-        return dict(type="position", value=dict(x=x, y=y, z=z))
+        return attr.dict()
     elif isinstance(attr, surface.Surface):
-        return dict(type="geometry", value=object_to_dict(attr, schema))
-    elif isinstance(attr, unicode):
-        return dict(type="string", value=attr)
+        return object_to_dict(attr, schema)
     else:
-        return dict(type="number", value=attr)
+        return attr
 
 
 def signature(cls):
+    """Takes a class and tries to figure out the types of its arguments.
+
+    TODO: not clean. Should be more explicit about argument types.
+    """
+
     signature = OrderedDict()
     bases = inspect.getmro(cls)
     for base in (bases[:-1]):  # skip the object class
@@ -91,13 +94,17 @@ def signature(cls):
             value = spec.defaults[i]
             #print "value", value
             argtype = type(value)
-            if argtype == Vec:
+            if argtype in (Vec, Position):
                 argtype = "position"
-                value = dict(x=value.x, y=value.y, z=value.z)
+                value = value.dict()
             elif argtype == surface.Surface:
                 argtype = "geometry"
                 value = None
-            elif argtype in (int, float):
+            elif argtype == Length:
+                argtype = "length"
+            elif argtype == int:
+                argtype == "integer"
+            elif argtype == float:
                 argtype = "number"
             elif argtype == str:
                 argtype = "string"

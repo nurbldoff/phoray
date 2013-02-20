@@ -4,12 +4,13 @@ from math import *
 from minivec import Vec, Mat
 from ray import Ray
 from solver import quadratic
+from . import Length
 
 
 class Surface(object):
     """
-    A general 3D surface. Should not be instantiated but serves as a base class
-    to be inherited.
+    An abstract 3D surface.
+    Should not be instantiated but serves as a base class to be inherited.
     """
 
     def __init__(self, xsize=1.0, ysize=1.0):
@@ -99,7 +100,7 @@ class Surface(object):
         Refurns the refracted ray given an incident ray.
         Uses Snell's law.
 
-        FIXME: Incomplete, doesn't work
+        FIXME: I don't think this is quite right.
         """
         P = self.intersect(ray)
         print P
@@ -183,11 +184,11 @@ class Plane(Surface):
 
 class Sphere(Surface):
     """
-    Half a sphere of radius R, with center (0,0,0). If R > 0, it is the top
-    hapf (z > 0) and if R < 0 it is the lower half (z < 0).
+    Half a sphere of radius R. If R > 0, it is the 'top' half (z > 0)
+    and if R < 0 it is the 'bottom' half (z < 0).
     """
 
-    def __init__(self, R=1, *args, **kwargs):
+    def __init__(self, R=Length(1), *args, **kwargs):
         self.R = R
         kwargs["xsize"] = min(kwargs["xsize"], abs(R))
         kwargs["ysize"] = min(kwargs["ysize"], abs(R))
@@ -206,12 +207,16 @@ class Sphere(Surface):
         #a = ray.endpoint
         a = ray.endpoint + Vec(0, 0, self.R)
         b = a + r
-        #R = self.R
+        R2 = self.R ** 2
 
-        t = quadratic((b.z - a.z) ** 2 + (b.x - a.x) ** 2 + (b.y - a.y) ** 2,
-                      2 * a.z * (b.z - a.z) + 2 * a.x * (b.x - a.x) +
-                      2 * a.y * (b.y - a.y),
+        t = quadratic(r.z ** 2 + r.x ** 2 + r.y ** 2,
+                      2 * a.z * r.z + 2 * a.x * r.x + 2 * a.y * r.y,
                       a.z ** 2 + a.x ** 2 + a.y ** 2 - self.R ** 2)
+
+        # t = quadratic((b.z - a.z) ** 2 + (b.x - a.x) ** 2 + (b.y - a.y) ** 2,
+        #               2 * a.z * (b.z - a.z) + 2 * a.x * (b.x - a.x) +
+        #               2 * a.y * (b.y - a.y),
+        #               a.z ** 2 + a.x ** 2 + a.y ** 2 - self.R ** 2)
 
         if t is None or type(t[0]) is complex or t < 0:  # no
             # intersection
@@ -333,8 +338,8 @@ class Ellipsoid(Surface):
         """
         a, b, c = self.a, self.b, self.c
         n = Vec(-2 * p.x / a ** 2,
-                 -2 * p.y / b ** 2,
-                 -2 * (p.z + c) / c ** 2)
+                -2 * p.y / b ** 2,
+                -2 * (p.z + c) / c ** 2)
         return n.normalize()
 
     def intersect(self, ray):
@@ -349,7 +354,7 @@ class Ellipsoid(Surface):
             2 * p0.z * (p1.z - p0.z) + c ** 2 * 2 * p0.x * (p1.x - p0.x) /
                 a ** 2 + c ** 2 * 2 * p0.y * (p1.y - p0.y) / b ** 2,
             p0.z ** 2 + c ** 2 * p0.x ** 2 / a ** 2 + c ** 2 * p0.y ** 2 /
-                b ** 2 - c ** 2 )
+                b ** 2 - c ** 2)
 
         if t is None or type(t[0]) is complex:  # no intersection
             return None
@@ -396,10 +401,6 @@ class Paraboloid(Surface):
     A paraboloid (rotated parabola) described by z/c = (x/a)^2 + (y/b)^2
     """
 
-    # schema = OrderedDict([("a", {"type": "number", "value": 1}),
-    #                       ("b", {"type": "number", "value": 1}),
-    #                       ("c", {"type": "number", "value": 1})] + base_schema)
-
     def __init__(self, a=1, b=1, c=1, *args, **kwargs):
         self.a = a
         self.b = b
@@ -419,19 +420,20 @@ class Paraboloid(Surface):
         r = ray.direction
         p = ray.endpoint
         a2, b2, c = self.a ** 2, self.b ** 2, self.c
+        xsize, ysize = self.xsize, self.ysize
         t = quadratic(r.x ** 2 / a2 + r.y ** 2 / b2,
                       2 * p.x * r.x / a2 + 2 * p.y * r.y / b2 - r.z / c,
                       p.x ** 2 / a2 + p.y ** 2 / b2 - p.z / c)
-        if t is None or type(t[0]) is complex or t < 0:  # no intersection
+        if t is None or t < 0:  # no intersection
             return None
         else:
             if self.concave:
                 ip = p + max(t) * r
             else:
                 ip = p + min(t) * r
-            if (self.xsize is None and self.ysize is None) or (
-                    (-self.xsize / 2 <= ip.x <= self.xsize / 2) and
-                    (-self.ysize / 2 <= ip.y <= self.ysize / 2)):
+            if ((xsize is None and ysize is None)
+                or (-xsize / 2 <= ip.x <= xsize / 2
+                    and -ysize / 2 <= ip.y <= ysize / 2)):
                 return ip
             else:
                 return None

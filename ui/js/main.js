@@ -26,13 +26,12 @@
         for (var property in schema) {
             var subtype = schema[property].type;
             if (subtype == "geometry") {
-                var oldgeo = (old && old.args.geometry.value) || null;
-                obj.args[property] = {type: "geometry",
-                                      value: create(schemas, "geometry", "Plane", oldgeo)};
+                var oldgeo = (old && old.args.geometry) || null;
+                obj.args[property] = create(schemas, "geometry", "Plane", oldgeo);
             } else {
-                var value = (old && property in old.args && old.args[property].value) ||
+                var value = (old && property in old.args && old.args[property]) ||
                         schema[property].value;
-                obj.args[property] = {type: subtype, value: value};
+                obj.args[property] = value;
             }
         }
         obj.id = (old && old.id) || curr_id++;
@@ -64,6 +63,10 @@
     Item.prototype.get_properties = function () {
         var properties = Object.keys(schemas[this.kind][this.type()]);
         return properties;
+    };
+
+    Item.prototype.get_schema = function (prop) {
+        return schemas[this.kind][this.type()][prop];
     };
 
 
@@ -103,8 +106,7 @@
                     return ko.utils.unwrapObservable(data.id);
                 },
                 create: function (options) {
-                    var geometry = new Geometry(options.data.value);
-                    return {type: ko.observable("geometry"), value: geometry};
+                    return geometry = new Geometry(options.data);
                 }
             }
         };
@@ -115,7 +117,7 @@
         self.repr = new view3d.Representation(view, null, ko.mapping.toJS(self.args));
 
         // Update the representation if the geometry's mesh changes
-        self.args.geometry.value.mesh.subscribe(function (mesh) {
+        self.args.geometry.mesh.subscribe(function (mesh) {
             self.repr.set_mesh(mesh);
         });
 
@@ -201,6 +203,7 @@
         // Ask the server what kinds of objects it supports
         $.get("/schema",
               function (data) {
+                  console.log("schemas", data);
                   schemas = data;
               });
 
@@ -223,17 +226,31 @@
                   });  // .extend({throttle: 0});
               });
 
+        self.update = function (data) {
+            var sys_index = self.systems.indexOf(self.selected_system()),
+                ele_index = self.selected_system().elements().indexOf(self.selected_system());
+            ko.mapping.fromJS(data.systems, self.mapping, self.systems);
+            if (sys_index >= 0) {
+                self.selected_system(self.systems()[sys_index]());
+            }
+            if (ele_index >= 0) {
+                self.selected_element(self.selected_system().elements[sys_index]());
+            }
+        };
+
         self.send = function () {
             var data = ko.mapping.toJS(self);
+            console.log("send", data);
             $.ajax({url: "/system", type: "POST",
                     data: JSON.stringify(data), contentType: "application/json",
                     success: function (data) {
                         //self.set(data);
+                        console.log("got", data);
                         if (data.systems.length > 0) {
                             // This means the system generated on the server was different
                             // from the client's one, so we have to update it. Could this
                             // lead to a loop?
-                            ko.mapping.fromJS(data.systems, self.mapping, self.systems);
+                            self.update(data);
                         }
                         var system = self.selected_system();
                         if (system) {
@@ -247,7 +264,7 @@
                   function (data) {
                       view.clear_traces();
                       view.draw_traces(data.traces, self.selected_system().sources().map(
-                          function(src) {return src.args.color.value()}));
+                          function(src) {return src.args.color()}));
                   });
         };
 
@@ -265,7 +282,7 @@
                       var datasets = [];
                       for (var source in data.footprint) {
                           var color = self.systems()[sys_index].sources()[source]
-                                  .args.color.value();
+                                  .args.color();
                           datasets.push({
                               label: source,
                               color: color,

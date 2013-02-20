@@ -109,6 +109,10 @@ class Vec(object):
         return 3
 
 
+    def dict(self):
+        return dict((key, self.__vec[i]) for i, key in enumerate("xyz"))
+
+
     def __getitem__(self, key):
         # Index the vector as a tuple, handles slicing
         if isinstance(key, basestring):

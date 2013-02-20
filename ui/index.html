@@ -91,7 +91,7 @@
             </div>
 
             <!-- ko foreach: get_properties() -->
-            <div data-bind="template: {name: 'property-' + $parent.args[$data].type + '-template',
+            <div data-bind="template: {name: 'property-' + $parent.get_schema($data).type,
                             data: {name: $data, value: $parent.args[$data]}}"
                  class="attrib">
             </div>
@@ -134,9 +134,8 @@
             </div>
 
             <!-- ko foreach: get_properties() -->
-            <div data-bind="template: {name: 'property-' + $parent.args[$data].type() + '-template',
-                            data: {name: $data, value: $parent.args[$data].value}}" class="attrib">
-
+            <div data-bind="template: {name: 'property-' + $parent.get_schema($data).type,
+                            data: {name: $data, value: $parent.args[$data]}}" class="attrib">
             </div>
             <!-- /ko -->
 
@@ -157,27 +156,27 @@
 
   <!-- TEMPLATES -->
 
-  <script type="text/html" id="property-string-template">
+  <script type="text/html" id="property-string">
     <div class="grid-6 label" data-bind="text: name"> </div>
     <input class="grid-6" type="text" data-bind="value: value"/>
   </script>
 
-  <script type="text/html" id="property-number-template">
+  <script type="text/html" id="property-number">
     <div class="grid-6 label" data-bind="text: name"> </div>
     <input class="grid-6" type="number" data-bind="value: value.forceNumeric()"/>
   </script>
 
-  <script type="text/html" id="property-length-template">
+  <script type="text/html" id="property-length">
     <div class="grid-6 label" data-bind="text: name"> </div>
-    <input class="grid-6" type="number" data-bind="value: value.forceNumeric()">
+    <input class="grid-6" type="number" data-bind="value: value.forceNonZero()" notEqual="5">
   </script>
 
-  <script type="text/html" id="property-angle-template">
+  <script type="text/html" id="property-angle">
       <div class="grid-6 label" data-bind="text: name"> </div>
       <input class="grid-6" type="number" data-bind="value: value.forceNumeric()">
   </script>
 
-  <script type="text/html" id="property-position-template">
+  <script type="text/html" id="property-position">
     <div class="grid-12 label" data-bind="text: name"> </div>
 
     <div class="attrib">
@@ -192,7 +191,7 @@
     </div>
   </script>
 
-  <script type="text/html" id="property-geometry-template">
+  <script type="text/html" id="property-geometry">
     <div>
       <div class="grid-12 label">geometry:</div>
 
@@ -205,8 +204,8 @@
 
           <!-- ko with: value -->
           <!-- ko foreach: $data.get_properties() -->
-          <div data-bind="template: {name: 'property-' + $parent.args[$data].type() + '-template',
-                          data: {name: $data, value: $parent.args[$data].value}}" class="attrib">
+          <div data-bind="template: {name: 'property-' + $parent.get_schema($data).type,
+                          data: {name: $data, value: $parent.args[$data]}}" class="attrib">
           </div>
           <!-- /ko -->
           <!-- /ko -->
@@ -220,6 +219,7 @@
   <script src="js/libs/knockout-2.2.1.debug.js"></script>
   <script src="js/libs/ko.observableDictionary.js"></script>
   <script src="js/libs/knockout.mapping-latest.js"></script>
+  <script src="js/libs/knockout.validation.js"></script>
 
   <script src="js/libs/three.js"></script>
   <script src="js/libs/OrthographicAspectCamera.js"></script>

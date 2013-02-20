@@ -8,6 +8,14 @@ def debug(*args):
         print(args)
 
 
-Position = Vec
-Rotation = Vec
-Length = float
+class Position(Vec):
+    pass
+
+
+class Rotation(Vec):
+    pass
+
+
+class Length(float):
+    pass
+a=2

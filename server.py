@@ -60,8 +60,7 @@ schemas = dict(System=OrderedDict((name, {})
 
 def create_geometry(spec):
     cls = surface_classes.get(spec["type"])
-    args = dict((name, prop["value"])
-                for name, prop in spec["args"].items())
+    args = dict((name, prop) for name, prop in spec["args"].items())
     geometry = cls(**args)
     geometry.id = spec["id"]
     return geometry
@@ -69,7 +68,7 @@ def create_geometry(spec):
 
 def create_element(spec):
     cls = element_classes[spec["type"]]
-    args = dict((name, prop["value"]) for name, prop in spec["args"].items())
+    args = dict((name, prop) for name, prop in spec["args"].items())
     args["geometry"] = create_geometry(args["geometry"])
     element = cls(**args)
     element.id = spec["id"]
@@ -80,7 +79,7 @@ def create_source(spec):
     print "source spec"
     pprint(spec)
     cls = source_classes.get(spec["type"])
-    args = dict((name, prop["value"]) for name, prop in spec["args"].items())
+    args = dict((name, prop) for name, prop in spec["args"].items())
     source = cls(**args)
     source.id = spec["id"]
     return source
@@ -114,6 +113,8 @@ def define_system():
 
     query = request.json
     specs = copy.deepcopy(query)
+
+    pprint(specs)
 
     for spec in specs["systems"]:
         sys_class = system_classes[spec["type"]]

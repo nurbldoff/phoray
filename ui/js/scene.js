@@ -201,8 +201,8 @@ var view3d = (function () {
         //mesh.eulerOrder = "ZYX";
         var frontmat = new THREE.MeshLambertMaterial({ color: 0xFFFF00,
                                                        side: THREE.FrontSide,
-                                                       shading: THREE.SmoothShading
-                                                         });
+                                                       shading: THREE.SmoothShading,
+                                                     });
         mesh.front = new THREE.Mesh( geom, frontmat );
         mesh.add(mesh.front);
         var backmat = new THREE.MeshLambertMaterial({ color: 0xFF00FF,
@@ -266,10 +266,10 @@ var view3d = (function () {
     };
 
     this.Representation.prototype.update = function (args) {
-        var position = args.position.value,
-            rotation = args.rotation.value,
-            offset = args.offset.value,
-            alignment = args.alignment.value,
+        var position = args.position,
+            rotation = args.rotation,
+            offset = args.offset,
+            alignment = args.alignment,
             radians = Math.PI / 180;
         this.obj.position.set(position.x, position.y , position.z);
         this.obj.rotation.set(rotation.x * radians,
