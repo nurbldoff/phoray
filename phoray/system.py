@@ -1,12 +1,13 @@
 # Describes an optical system
-from collections import OrderedDict
+from itertools import count
 from math import *
 
+from member import Member
 from minivec import Vec, Mat
 from ray import Ray
 
 
-class OpticalSystem(object):
+class OpticalSystem(Member):
 
     """An optical system consists of Sources and Elements.
 
@@ -14,7 +15,8 @@ class OpticalSystem(object):
     Ray can interact with, for example a mirror that can reflect it.
     """
 
-    def __init__(self, elements=None, sources=None):
+    def __init__(self, elements=[], sources=[], **kwargs):
+
         if elements is not None:
             self.elements = elements
         else:
@@ -23,6 +25,18 @@ class OpticalSystem(object):
             self.sources = sources
         else:
             self.sources = []
+
+        self.current_id = count()
+
+        Member.__init__(self, **kwargs)
+
+    def add_source(self, source):
+        source._id = self.current_id.next()
+        self.sources.append(source)
+
+    def add_element(self, element):
+        element._id = self.current_id.next()
+        self.elements.append(element)
 
     def update(self):
         """This function gets run after the system has been defined. It may
@@ -110,8 +124,40 @@ class Sequential(OpticalSystem):
     #         element.rotation = rotation
     #         rotation = rotation + element.alignment
 
+    # def update(self):
+    #     print "update"
+    #     if not self.sources:
+    #         return
+    #     source = self.sources[0]
+    #     position = source.position
+    #     rotation = source.rotation
+    #     ray = Ray(origin=position,
+    #               direction=source.globalize_direction(source.axis))
+    #     for i, element in enumerate(self.elements):
+    #         print "updating element %d" % i
+    #         element.position = position
+    #         element.rotation = rotation
+    #         new_ray = element.propagate(ray)
+    #         if new_ray is None:
+    #             print "missed element %d" % i
+    #             return False
+
+    #         npor = ray.direction.cross(new_ray.direction)
+    #         # normal to plane of reflection
+    #         x_angle = ray.direction.angle(new_ray.direction)
+    #         if npor.dot(element.x_axis()) > 0:
+    #             x_angle = - x_angle
+    #         print "angle", x_angle
+    #         y_angle = element.rotation.y + element.alignment.y
+    #         z_angle = element.rotation.z + element.alignment.z
+    #         rot = Vec(x_angle, y_angle, z_angle)
+    #         rotmat = Mat().rotate(rotation)
+    #         rotmat2 = Mat().rotate(rot)
+    #         position = element.position + element.offset.transform(rotmat)
+    #         rotation += rot
+    #         ray = new_ray
+
     def update(self):
-        print "update"
         if not self.sources:
             return
         source = self.sources[0]
@@ -120,21 +166,14 @@ class Sequential(OpticalSystem):
         ray = Ray(origin=position,
                   direction=source.globalize_direction(source.axis))
         for i, element in enumerate(self.elements):
-            print "updating element %d" % i
             element.position = position
-            element.rotation = rotation
+            element.rotation = Vec(rotation.x, rotation.y, element.rotation.z)
             new_ray = element.propagate(ray)
             if new_ray is None:
-                print "missed element %d" % i
-                return False
-            else:
-                x_angle = ray.direction.angle(new_ray.direction)
-                print "angle", x_angle
-                y_angle = element.rotation.y + element.alignment.y
-                z_angle = element.rotation.z + element.alignment.z
-                rot = Vec(x_angle, y_angle, z_angle)
-                rotmat = Mat().rotate(rotation)
-                rotmat2 = Mat().rotate(rot)
-                position = element.position + element.offset.transform(rotmat)
-                #rotation += rot
-                ray = new_ray
+                return
+            npor = ray.direction.cross(new_ray.direction)
+            angle = ray.direction.angle(new_ray.direction)
+            position = element.position + element.offset.transform(Mat().rotate(rotation))
+            rotation = rotation + Mat().rotateAxis(angle, npor).decompose()[1]
+
+            ray = new_ray

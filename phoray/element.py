@@ -10,12 +10,9 @@ from ray import Ray
 
 class Element(Member):
 
-    def __init__(self,
-                 position=Vec(0, 0, 0), rotation=Vec(0, 0, 0),
-                 offset=Vec(0, 0, 0), alignment=Vec(0, 0, 0),
-                 geometry=Surface()):
+    def __init__(self, geometry=Surface(), *args, **kwargs):
         self.geometry = geometry
-        Member.__init__(self, position, rotation, offset, alignment)
+        Member.__init__(self, *args, **kwargs)
         self.footprint = defaultdict(list)
 
     def propagate(self, ray, source=0):
@@ -55,9 +52,10 @@ class Detector(Element):
     """
 
     def _propagate(self, ray):
-        if ray is not None:
-            ray0 = self.localize(ray)
-            pos = self.globalize_vector(self.geometry.intersect(ray0))
+        ray0 = self.localize(ray)
+        p = self.geometry.intersect(ray0)
+        if p:
+            pos = self.globalize_vector(p)
             return Ray(pos, None, ray.wavelength)
         else:
             return None
@@ -72,15 +70,19 @@ class Screen(Element):
 
     def _propagate(self, ray):
         ray0 = self.localize(ray)
-        p = self.globalize_vector(self.geometry.intersect(ray0))
-        return Ray(p, ray.direction, ray.wavelength)
+        p = self.geometry.intersect(ray0)
+        if p:
+            p = self.globalize_vector(p)
+            return Ray(p, ray.direction, ray.wavelength)
+        else:
+            return None
 
 
 class ReflectiveGrating(Element):
 
     """A reflective grating diffracts incoming rays reflectively."""
 
-    def __init__(self, d=0., order=0., *args, **kwargs):
+    def __init__(self, d=0., order=0, *args, **kwargs):
         """
         Define a reflecting element with geometry shape given by s. If
         d>0 it will work as a grating with line spacing d and lines in

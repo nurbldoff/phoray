@@ -3,14 +3,20 @@ from math import *
 
 from minivec import Vec, Mat
 from ray import Ray
+from phoray import current_id
 
 
 class Member(object):
 
     """Baseclass for a generalized member of an optical system."""
 
-    def __init__(self, position=Vec(0, 0, 0), rotation=Vec(0, 0, 0),
+    def __init__(self, _id=None, position=Vec(0, 0, 0), rotation=Vec(0, 0, 0),
                  offset=Vec(0, 0, 0), alignment=Vec(0, 0, 0)):
+
+        if _id is None:
+            self._id = current_id.next()
+        else:
+            self._id = _id
 
         self.position = Vec(position)
         self.rotation = Vec(rotation)
@@ -19,9 +25,11 @@ class Member(object):
         self.alignment = Vec(alignment)
 
         # Precalculate some matrices. Note that this means that the
-        # element can't be moved after creation, unless precalc is
+        # member can't be moved after creation, unless precalc is
         # called again afterwards.
         self.precalc()
+
+        self._schema = None
 
     def precalc(self):
         self._rotate = Mat().rotate(self.rotation)
@@ -68,3 +76,12 @@ class Member(object):
         return Ray(self.globalize_vector(ray.endpoint),
                    self.globalize_direction(ray.direction),
                    ray.wavelength)
+
+    def x_axis(self):
+        return self.globalize_vector(Vec(1, 0, 0))
+
+    def y_axis(self):
+        return self.globalize_vector(Vec(0, 1, 0))
+
+    def z_axis(self):
+        return self.globalize_vector(Vec(0, 0, 1))

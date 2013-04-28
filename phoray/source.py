@@ -16,13 +16,9 @@ base_schema = OrderedDict([("wavelength", {"type": "length"}),
 class Source(Member):
 
     def __init__(self,
-                 wavelength=0.0,
-                 color="#ffffff",
-                 position=Vec(0, 0, 0),
-                 rotation=Vec(0, 0, 0),
-                 offset=Vec(0, 0, 0),
-                 alignment=Vec(0, 0, 0)):
-        Member.__init__(self, position, rotation, offset, alignment)
+                 wavelength=0.0, color="#ffffff", *args, **kwargs):
+
+        Member.__init__(self, *args, **kwargs)
         self.wavelength = wavelength
         self.color = color
 

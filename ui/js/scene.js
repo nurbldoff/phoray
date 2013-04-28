@@ -1,5 +1,7 @@
 var view3d = (function () {
 
+    var radians = Math.PI / 180;
+
     function setup_lights (scene) {
         var light = new THREE.DirectionalLight( 0xFFFFFF, 0.5 );
         light.position.set( 10, 0, 5 );
@@ -106,9 +108,14 @@ var view3d = (function () {
         if (!Detector.webgl) {
             var warning = Detector.getWebGLErrorMessage();
             document.getElementById('view').appendChild(warning);
+
+            // It should be possible to run with the canvas renderer if the webgl
+            // backend doesn't work. Needs testing and probably some tweaking, though.
+            //this.renderer = new THREE.CanvasRenderer({antialias: false});
+
         } else {
             this.renderer = new THREE.WebGLRenderer({antialias: true});
-            //var renderer = new THREE.CanvasRenderer({antialias: false});
+
             var view_width = element.offsetWidth, view_height = element.offsetHeight;
 
             // Camera coodinates
@@ -142,6 +149,7 @@ var view3d = (function () {
             this.scene.remove(this.traces);
             this.traces = new THREE.Object3D();
         }
+        this.render();
     };
 
     var color_from_string = function (s) {
@@ -263,6 +271,7 @@ var view3d = (function () {
 
     this.Representation.prototype.remove = function () {
         this.view.scene.remove(this.obj);
+        this.view.render();
     };
 
     this.Representation.prototype.update = function (args) {

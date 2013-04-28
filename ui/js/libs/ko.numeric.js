@@ -88,3 +88,34 @@ ko.extenders.representation = function (target, parent, scn) {
     };
 
 };
+
+
+ko.observable.fn.forceNumeric = function() {
+    var underlyingObservable = this;
+    if (!this.forceNumericInterceptor) {
+        this.forceNumericInterceptor = ko.computed({
+            read: this,
+            write: function(newValue) {
+                var current = underlyingObservable(),
+                    valueToWrite = isNaN(newValue) ? 0 : parseFloat(+newValue);
+
+                if (valueToWrite < 0) {
+                    valueToWrite = 0;
+                }
+
+                console.log(valueToWrite);
+                //only write if it changed
+                if (valueToWrite !== current) {
+                    underlyingObservable(valueToWrite);
+                } else {
+                    //if the rounded value is the same as it was, but a different value was written, force a notification so the current field is updated to the rounded value
+                    if (newValue !== current) {
+                            underlyingObservable.valueHasMutated();
+                    }
+                }
+            }
+        });
+    }
+
+    return this.forceNumericInterceptor;
+};

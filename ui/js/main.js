@@ -1,12 +1,12 @@
 (function () {
 
     var schemas = {},
-        curr_id = 0,
         view = new view3d.View(document.getElementById("view"));
 
 
     // Helper to create a JS model from schema, with optional default values
     var create = function(schemas, kind, type, old) {
+        console.log("create", kind, type);
         var obj = {type: type, args: {}},
             schema = schemas[kind][type];
         for (var property in schema) {
@@ -14,14 +14,14 @@
             if (subtype == "geometry") {
                 var oldgeo = (old && old.args.geometry) || null,
                     geotype = (oldgeo && oldgeo.type) || "Plane";
-                obj.args[property] = create(schemas, "geometry", geotype, oldgeo);
+                obj.args[property] = create(schemas, "Surface", geotype, oldgeo);
             } else {
                 var value = (old && property in old.args && old.args[property]) ||
                         schema[property].value;
                 obj.args[property] = value;
             }
         }
-        obj.id = (old && old.id) || curr_id++;
+        //obj.id = (old && old.id) || curr_id++;
         return obj;
     };
 
@@ -30,6 +30,13 @@
     function Item() {
 
         var self = this;
+
+        self.update = function (type) {
+            var data = {system: {type: type}};
+            $.get("/create?what=" + self.kind, {}, function (data) {
+                ko.mapping.fromJS(data, self);
+            });
+        };
 
         // If the type of the item is changed, we need to regenerate from schema
         self.type.subscribe(function (type) {
@@ -48,7 +55,10 @@
     };
 
     Item.prototype.get_properties = function () {
-        var properties = Object.keys(schemas[this.kind][this.type()]);
+        var schema = schemas[this.kind][this.type()];
+        var properties = ko.utils.arrayFilter(Object.keys(schema), function(item) {
+            return schema[item].type != "list";
+        });
         return properties;
     };
 
@@ -57,11 +67,52 @@
     };
 
 
+    // An set of arguments
+    function Arguments(data) {
+
+        var self = this;
+
+        var mapping = {
+            elements: {
+                key: function(data) {
+                    return ko.utils.unwrapObservable(data._id);
+                },
+                create: function (options) {
+                    return new Element(options.data);
+                },
+                delete: function (options) {
+
+                }
+            },
+            sources: {
+                key: function(data) {
+                    return ko.utils.unwrapObservable(data._id);
+                },
+                create: function (options) {
+                    console.log("create source");
+                    return new Source(options.data);
+                }
+            },
+            geometry: {
+                key: function(data) {
+                    return ko.utils.unwrapObservable(data._id);
+                },
+                create: function (options) {
+                    console.log("geometry data", options.data);
+                    return geometry = new Geometry(options.data);
+                }
+            }
+        };
+
+        ko.mapping.fromJS(data, mapping, self);
+    }
+
+
     // A geometry item
     function Geometry(data) {
 
         var self = this;
-        self.kind = "geometry";
+        self.kind = "Surface";
         self.mesh = ko.observable();
 
         ko.mapping.fromJS(data, {}, self);
@@ -85,19 +136,16 @@
     function Element(data) {
 
         var self = this;
-        self.kind = "element";
+        self.kind = "Element";
 
-        self.mapping = {
-            geometry: {
-                key: function(data) {
-                    return ko.utils.unwrapObservable(data.id);
-                },
+        var mapping = {
+            args: {
                 create: function (options) {
-                    return geometry = new Geometry(options.data);
+                    return new Arguments(options.data);
                 }
             }
         };
-        ko.mapping.fromJS(data, self.mapping, self);
+        ko.mapping.fromJS(data, mapping, self);
         Item.call(self);
 
         // 3d representation
@@ -124,7 +172,7 @@
     function Source(data) {
 
         var self = this;
-        self.kind = "source";
+        self.kind = "Source";
 
         ko.mapping.fromJS(data, {}, self);
 
@@ -138,28 +186,18 @@
     function OpticalSystem (data) {
 
         var self = this;
-        self.kind = "system";
+        self.kind = "System";
 
-
-        self.mapping = {
-            elements: {
-                key: function(data) {
-                    return ko.utils.unwrapObservable(data.id);
-                },
+        var mapping = {
+            args: {
                 create: function (options) {
-                    return new Element(options.data);
-                }
-            },
-            sources: {
-                key: function(data) {
-                    return ko.utils.unwrapObservable(data.id);
-                },
-                create: function (options) {
-                    return new Source(options.data);
+                    console.log("create Arguments");
+                    return new Arguments(options.data);
                 }
             }
         };
-        ko.mapping.fromJS(data, self.mapping, self);
+
+        ko.mapping.fromJS(data, mapping, self);
 
         Item.call(self);
     };
@@ -171,23 +209,46 @@
     var MainViewModel = function () {
         var self = this;
 
-        //self.systems = ko.observableArray([]);
+        // these are 'internal' properties keeping track of selections
         self.selected_system = ko.observable(null);
         self.selected_element = ko.observable(null);
+        self.selected_source = ko.observable(null);
 
-        self.tracing = false;  // flag used to block new traces while tracing
+        // self.selected_system = ko.computed(function () {
+        //     self._selsys();
+        //     if (self.systems)
+        //         return self.systems()[self._selsys()];
+        //     else
+        //         return null;
+        // });
 
-        self.mapping = {
+        // self.selected_element = ko.computed(function () {
+        //     self._selele();
+        //     if (self.systems)
+        //         return self.selected_system().args.elements()[self._selele()];
+        //     else
+        //         return null;
+        // });
+
+        // self.selected_source = ko.computed(function () {
+        //     self._selsou();
+        //     if (self.systems)
+        //         return self.selected_system().args.sources()[self._selsou()];
+        //     else
+        //         return null;
+        // });
+
+        var mapping = {
             systems: {
                 key: function(data) {
-                    return ko.utils.unwrapObservable(data.id);
+                    return ko.utils.unwrapObservable(data._id);
                 },
                 create: function (options) {
                     return new OpticalSystem(options.data);
-                },
+                }
             }
         };
-        ko.mapping.fromJS({systems: []}, self.mapping, self);
+        ko.mapping.fromJS({systems: []}, mapping, self);
 
         // Ask the server what kinds of objects it supports
         $.get("/schema",
@@ -199,13 +260,6 @@
         // If the server already has a system defined, let's use it
         $.get("/system",
               function (data) {
-                  // We need to update the current ID so we don't overlap
-                  data.systems.forEach(function (sys) {
-                      sys.elements.concat(sys.sources).forEach(function (ele) {
-                          curr_id = Math.max(curr_id, ele.id) + 1;
-                      });
-                      curr_id = Math.max(curr_id, sys.id);
-                  });
                   ko.mapping.fromJS(data, self.mapping, self);
                   // Start listening for any changes in the model, and
                   // if they happen, send everything to the server.
@@ -216,7 +270,7 @@
               });
 
         self.update = function (data) {
-            // FIXME: We need to avoid sending lots of times (and potential loops)
+            // We need to avoid sending lots of times (and potential loops)
             // since the mapping update is not done atomically.
             // This is a crude way of doing it.
             self.listener.pause();
@@ -224,47 +278,59 @@
             self.listener.resume();
         };
 
+        var update = function (data) {
+            //self.set(data);
+            console.log("got", data);
+            if (data.systems) {
+                // This means the system generated on the server was different
+                // from the client's one, so we have to update it.
+                self.update(data);
+            }
+            var system = self.selected_system();
+            if (system) {
+                console.log("trace");
+                self.trace();
+            }
+        };
+
         self.send = function () {
             var data = ko.mapping.toJS(self);
             console.log("send", data);
             $.ajax({url: "/system", type: "POST",
                     data: JSON.stringify(data), contentType: "application/json",
-                    success: function (data) {
-                        //self.set(data);
-                        console.log("got", data);
-                        if (data.systems) {
-                            // This means the system generated on the server was different
-                            // from the client's one, so we have to update it.
-                            self.update(data);
-                        }
-                        var system = self.selected_system();
-                        if (system) {
-                            self.trace();
-                        }
-                    }});
+                    success: update});
         };
 
-        // Ask the server to trace some rays for us
+        var tracing = false,  // flag used to block new traces while tracing
+            trace_queued = false;
+
+        // Ask the server to trace us some rays
         self.trace = function (n) {
             n = n || 100;
-            if (!self.tracing) {
+            if (!tracing) {
                 // No more tracing until we're done with this one. Primitive, but it will
                 // have to do until the server is more asynchronous.
-                self.tracing = true;
+                tracing = true;
                 $.get("/trace", {n: n, system: self.systems.indexOf(self.selected_system())},
                       function (data) {
                           view.clear_traces();
-                          view.draw_traces(data.traces, self.selected_system().sources().map(
+                          view.draw_traces(data.traces, self.selected_system().args.sources().map(
                               function(src) {return src.args.color();}));
-                          self.tracing = false;
+                          tracing = false;
+                          if (trace_queued) {
+                              trace_queued = false;
+                              self.trace();
+                          }
                       });
+            } else {
+                trace_queued = true;
             }
         };
 
         $( "#footprint" ).dialog({ autoOpen: false, width: 300, height: 300 });
         self.footprint = function (element) {
             var sys_index = self.systems.indexOf(self.selected_system()),
-                ele_index = self.selected_system().elements.indexOf(self.selected_element);
+                ele_index = self.selected_system().args.elements.indexOf(self.selected_element);
             $.get("/footprint", {element: ele_index, system: sys_index},
                   function (data) {
                       $("#footprint").empty();
@@ -274,7 +340,7 @@
                       //plot( data.footprint, "#footprint");
                       var datasets = [];
                       for (var source in data.footprint) {
-                          var color = self.systems()[sys_index].sources()[source]
+                          var color = self.systems()[sys_index].args.sources()[source]
                                   .args.color();
                           datasets.push({
                               label: source,
@@ -303,51 +369,110 @@
                   });
         };
 
+        // Note: There is some confusion here. "element" sometimes refers to an Element and
+        // sometimes either an Element or a Source.
+
         self.add_system = function () {
-            var systemdata = create(schemas, "system", "Free");
-            systemdata.elements = [];
-            systemdata.sources = [];
-            var system = new OpticalSystem(systemdata);
-            self.systems.push(system);
-            self.selected_system(system);
+            var data = {system: {type: "Free"}};
+            $.get("/create?what=system", {}, function (data) {
+                var system = new OpticalSystem(data);
+                console.log("created system", system);
+                self.systems.push(system);
+                self.select_system(system);
+            });
         };
 
         self.add_element = function () {
-            var element = new Element(create(schemas, "element", "Mirror"));
-            self.selected_system().elements.push(element);
-            self.selected_element(element);
+            var data = {system: {type: "Free"}};
+            $.get("/create?what=element", data, function (data) {
+                var element = new Element(data);
+                self.selected_system().args.elements.push(element);
+                self.select_element(element);
+            });
         };
 
         self.add_source = function () {
-            var source = new Source(create(schemas, "source", "GaussianSource"));
-            self.selected_system().sources.push(source);
-            self.selected_element(source);
+            var data = {system: {type: "GaussianSource"}};
+            $.get("/create?what=source", data, function (data) {
+                var source = new Source(data);
+                self.selected_system().args.sources.push(source);
+                self.select_source(source);
+            });
+        };
+
+        self.clone_element = function () {
+            var original = ko.mapping.toJS(self.selected_element()),
+                clone = new Element(create(schemas, "Element", original.type, original));
+            self.selected_system().args.elements.push(clone);
+            self.selected_element(clone);
+        };
+
+        self.clone_source = function () {
+            var original = ko.mapping.toJS(self.selected_element()),
+                clone = new Source(create(schemas, "Source", original.type, original));
+            self.selected_system().sources.push(clone);
+            self.selected_element(clone);
         };
 
         self.select_system = function (system) {
-            self.selected_element(null);
             self.selected_system(system);
+            self.selected_element(null);
+            self.selected_source(null);
         };
 
         self.select_element = function (element, system) {
-            self.selected_system(system);
+            self.selected_source(null);
+            if (!!system) {
+                self.selected_system(system);
+            }
             self.selected_element(element);
-            console.log("select_element", self.selected_element());
         };
 
-        self.remove_element = function () {
-            var element = self.selected_element(),
-                list = self.selected_system()[element.kind + "s"],
+        self.select_source = function (source, system) {
+            self.selected_element(null);
+            if (!!system) {
+                self.selected_system(system);
+            }
+            self.selected_source(source);
+        };
+
+        self.remove_system = function () {
+            var system = self.selected_system(),
+                list = self.systems, index = list.indexOf(system);
+            ko.utils.arrayForEach(system.args.elements(), function (element) {
+                self.remove_element(element);});
+            ko.utils.arrayForEach(system.args.sources(), function (source) {
+                self.remove_source(source);});
+            list.remove(system);
+            index = Math.max(Math.min(list.length-1, index), 0);
+            self.selected_system(list()[index]);
+            view.clear_traces();
+        };
+
+        self.remove_element = function (element) {
+            element = element || self.selected_element();
+            var list = self.selected_system().args.elements,
                 index = list.indexOf(element);
             element.repr.remove();
             list.remove(element);
+            index = Math.max(Math.min(list.length-1, index), 0);
             self.selected_element(list()[index]);
+        };
+
+        self.remove_source = function (source) {
+            source = source || self.selected_element();
+            var list = self.selected_system().args.sources,
+                index = list.indexOf(source);
+            //source.repr.remove();
+            list.remove(source);
+            index = Math.max(Math.min(list.length-1, index), 0);
+            self.selected_source(list()[index]);
         };
 
         self.move_element_up = function () {
             var element = self.selected_element(),
-                list = self.selected_system()[element.kind + "s"];
-            var index = list.indexOf(element);
+                list = self.selected_system().args.elements,
+                index = list.indexOf(element);
             if (index > 0) {
                 list.remove(element);
                 list.splice(index - 1, 0, element);
@@ -356,14 +481,13 @@
 
         self.move_element_down = function () {
             var element = self.selected_element(),
-                list = self.selected_system()[element.kind + "s"];
-            var index = list.indexOf(element);
+                list = self.selected_system().args.elements,
+                index = list.indexOf(element);
             if (index < list().length-1) {
                 list.remove(element);
                 list.splice(index + 1, 0, element);
             }
         };
-
     };
 
     ko.applyBindings(new MainViewModel());

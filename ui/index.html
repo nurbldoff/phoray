@@ -4,10 +4,10 @@
   <meta charset="utf-8">
   <title>Phoray</title>
   <!-- <link rel="stylesheet" href="css/foundation.css"> -->
-  <link type="text/css" href="js/libs/jquery-ui-1.10.1.custom/css/ui-darkness/jquery-ui-1.10.1.custom.css" rel="Stylesheet" />
-  <link rel="stylesheet" href="css/toast/toast.css">
-  <link rel="stylesheet" href="css/layout.css">
-  <link rel="stylesheet" href="css/app.css">
+  <link type="text/css" href="static/js/libs/jquery-ui-1.10.1.custom/css/ui-darkness/jquery-ui-1.10.1.custom.css" rel="Stylesheet" />
+  <link rel="stylesheet" href="static/css/toast/toast.css">
+  <link rel="stylesheet" href="static/css/layout.css">
+  <link rel="stylesheet" href="static/css/app.css">
 </head>
 
 <body>
@@ -25,14 +25,14 @@
              class="item">
           <span data-bind="text: $index"> </span>:
           <span data-bind="text: type"> </span>
-          (<span data-bind="text: id"> </span>)
+          (<span data-bind="text: _id"> </span>)
         </div>
         <div class="item source">
-          <div data-bind="visible: sources().length > 0" class="header">Sources</div>
-          <div data-bind="foreach: $data.sources">
+          <div data-bind="visible: args.sources().length > 0" class="header">Sources</div>
+          <div data-bind="foreach: $data.args.sources">
             <div class="item"
-                 data-bind="click: $root.select_element.bind($root, $data, $parent),
-                            css: {selected: $root.selected_element() == $data}">
+                 data-bind="click: $root.select_source.bind($root, $data, $parent),
+                            css: {selected: $root.selected_source() == $data}">
               <span data-bind="text: $index"> </span>:
               <span data-bind="text: name"> </span>
               <span data-bind="text: type"> </span>
@@ -43,15 +43,15 @@
           </div>
         </div>
         <div class="item element">
-          <div data-bind="visible: elements().length > 0" class="header">Elements</div>
-          <div data-bind="foreach: $data.elements">
+          <div data-bind="visible: args.elements().length > 0" class="header">Elements</div>
+          <div data-bind="foreach: $data.args.elements">
             <div class="item"
                  data-bind="click: $root.select_element.bind($root, $data, $parent),
                             css: {selected: $root.selected_element() == $data}">
               <span data-bind="text: $index"> </span>:
               <span data-bind="text: name"> </span>
               <span data-bind="text: type"> </span>
-              (<span data-bind="text: id"> </span>)
+              <!-- (<span data-bind="text: id"> </span>) -->
             </div>
           </div>
         </div>
@@ -74,14 +74,14 @@
 
                 <span> System </span>
                 <span data-bind="text: $root.systems.indexOf($data)"> </span>
-                (<span data-bind="text: id"> </span>)
+                <!-- (<span data-bind="text: id"> </span>) -->
 
               </div>
               <div data-bind="click: $parent.move_up"
                    class="grid-1 ui-icon ui-icon-arrowthick-1-n">^</div>
               <div data-bind="click: $parent.move_down"
                    class="grid-1 ui-icon ui-icon-arrowthick-1-s">v</div>
-              <div data-bind="click: $parent.remove"
+              <div data-bind="click: $parent.remove_system"
                     class="grid-1 ui-icon ui-icon-trash">X</div>
             </div>
 
@@ -109,24 +109,24 @@
           </div>
         </div>
 
-        <div data-bind="visible: $root.selected_element, with: $root.selected_element"
+        <!-- SOURCE PROPERTIES -->
+        <div data-bind="visible: $root.selected_source(), with: $root.selected_source"
              class="grids section">
-          <div class="" data-bind="css: kind">
+          <div class="" data-bind="css: 'source'">
             <div class="header">
               <div class="grid-8">
-                <span data-bind="text: kind"></span>
-                <span data-bind="text: $root.selected_system()[kind + 's'].indexOf($data)">
+                <span data-bind="text: 'Source'"></span>
                 </span>
               </div>
 
-              <span data-bind="click: $root.footprint"
-                    class="grid-1 ui-icon ui-icon-image">P</span>
               <span data-bind="click: $root.move_element_up"
-                    class="grid-1 ui-icon ui-icon-arrowthick-1-n">^</span>
+                    class="grid-1 ui-icon ui-icon-arrowthick-1-n" title="Move up">^</span>
               <span data-bind="click: $root.move_element_down"
-                    class="grid-1 ui-icon ui-icon-arrowthick-1-s">v</span>
-              <span data-bind="click: $root.remove_element"
-                    class="grid-1 ui-icon ui-icon-trash">X</span>
+                    class="grid-1 ui-icon ui-icon-arrowthick-1-s" title="Move down">v</span>
+              <span data-bind="click: $root.clone_source"
+                    class="grid-1 ui-icon ui-icon-copy" title="Clone">X</span>
+              <span data-bind="click: $root.remove_source"
+                    class="grid-1 ui-icon ui-icon-trash" title="Remove">X</span>
 
             </div>
 
@@ -143,6 +143,44 @@
 
           </div>
         </div>
+
+        <!-- ELEMENT PROPERTIES -->
+        <div data-bind="visible: $root.selected_element(), with: $root.selected_element"
+             class="grids section">
+          <div class="element">
+            <div class="header">
+              <div class="grid-7">
+                <span data-bind="text: kind"></span>
+                <span data-bind="text: $root.selected_system().args.elements.indexOf($data)">
+                </span>
+              </div>
+
+              <span data-bind="click: $root.footprint"
+                    class="grid-1 ui-icon ui-icon-image" title="Plot footprint">P</span>
+              <span data-bind="click: $root.move_element_up"
+                    class="grid-1 ui-icon ui-icon-arrowthick-1-n" title="Move up">^</span>
+              <span data-bind="click: $root.move_element_down"
+                    class="grid-1 ui-icon ui-icon-arrowthick-1-s" title="Move down">v</span>
+              <span data-bind="click: $root.clone_element"
+                    class="grid-1 ui-icon ui-icon-copy" title="Clone">X</span>
+              <span data-bind="click: $root.remove_element"
+                    class="grid-1 ui-icon ui-icon-trash" title="Remove">X</span>
+            </div>
+
+            <div class="attrib">
+              <div class="grid-4 label"> type </div>
+              <select class="grid-8" data-bind="value: type, options: get_types()"></select>
+            </div>
+
+            <!-- ko foreach: get_properties() -->
+            <div data-bind="template: {name: 'property-' + $parent.get_schema($data).type,
+                            data: {name: $data, value: $parent.args[$data]}}" class="attrib">
+            </div>
+            <!-- /ko -->
+
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
@@ -182,6 +220,7 @@
       <div class="grid-6 label" data-bind="text: name"> </div>
       <input class="grid-6" type="number" data-bind="value: value.forceNumeric()">
   </script>
+
 
   <script type="text/html" id="property-position">
     <div class="grid-12 label" data-bind="text: name"> </div>
@@ -224,25 +263,25 @@
   </script>
 
 
-  <script src="js/libs/knockout-2.2.1.debug.js"></script>
-  <script src="js/libs/knockout.mapping-latest.js"></script>
-  <script src="js/libs/knockout.validation.js"></script>
+  <script src="static/js/libs/knockout-2.2.1.debug.js"></script>
+  <script src="static/js/libs/knockout.mapping-latest.js"></script>
+  <script src="static/js/libs/knockout.validation.js"></script>
 
-  <script src="js/libs/three.js"></script>
-  <script src="js/libs/OrthographicAspectCamera.js"></script>
-  <script src="js/libs/TrackballControls.js"></script>
-  <script src="js/libs/Detector.js"></script>
+  <script src="static/js/libs/three.js"></script>
+  <script src="static/js/libs/OrthographicAspectCamera.js"></script>
+  <script src="static/js/libs/TrackballControls.js"></script>
+  <script src="static/js/libs/Detector.js"></script>
 
-  <script src="js/libs/jquery-1.8.3.min.js"></script>
-  <script src="js/libs/jquery-ui-1.10.1.custom/js/jquery-ui-1.10.1.custom.js"></script>
-  <script src="js/libs/d3.js"></script>
-  <script src="js/libs/jquery.flot.js"></script>
-  <script src="js/libs/knockout-jqueryui.min.js"></script>
+  <script src="static/js/libs/jquery-1.8.3.min.js"></script>
+  <script src="static/js/libs/jquery-ui-1.10.1.custom/js/jquery-ui-1.10.1.custom.js"></script>
+  <script src="static/js/libs/d3.js"></script>
+  <script src="static/js/libs/jquery.flot.js"></script>
+  <script src="static/js/libs/knockout-jqueryui.min.js"></script>
 
-  <script src="js/knockout-utils.js"></script>
-  <script src="js/scene.js"></script>
-  <script src="js/plot.js"></script>
-  <script src="js/main.js"></script>
+  <script src="static/js/knockout-utils.js"></script>
+  <script src="static/js/scene.js"></script>
+  <script src="static/js/plot.js"></script>
+  <script src="static/js/main.js"></script>
 
   <script>
 

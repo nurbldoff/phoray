@@ -98,7 +98,7 @@ class Surface(object):
     def refract(self, ray, i1, i2):
         """
         Refurns the refracted ray given an incident ray.
-        Uses Snell's law.
+        Uses Snell's law. Does *not* simulate dispersion.
 
         FIXME: Check that this is correct.
         """
@@ -195,7 +195,7 @@ class Sphere(Surface):
         Surface.__init__(self, *args, **kwargs)
 
     def normal(self, p):
-        return Vec(p.x, p.y, p.z + self.R) / self.R
+        return -Vec(p.x, p.y, p.z + self.R) / self.R
 
     def intersect(self, ray):
 
