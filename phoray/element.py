@@ -91,7 +91,7 @@ class ReflectiveGrating(Element):
         """
         self.d = d
         self.order = order
-        print "Mirror", args, kwargs
+        #print "Mirror", args, kwargs
         Element.__init__(self, *args, **kwargs)
 
     def _propagate(self, ray):
@@ -130,7 +130,7 @@ class ReflectiveVLSGrating(Mirror):
         #x=y
         b = -x / sqrt(R ** 2 - x ** 2)
         theta = atan(b)  # grating tangent angle
-        print b, theta
+        #print b, theta
         d = 0
         for n, a in enumerate(self.an):
             d += a * x ** n

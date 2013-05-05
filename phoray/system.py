@@ -70,7 +70,7 @@ class OpticalSystem(Member):
         """Generate some rays and propagate them through the system."""
 
         for element in self.elements:
-            element.footprint = []
+            element.footprint.clear()
 
         for i, source in enumerate(self.sources):
             for ray in source.generate(n):

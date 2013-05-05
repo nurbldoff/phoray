@@ -84,12 +84,12 @@ class Surface(object):
             # must be taken into account!
             phi = acos(r_ref.dot(g))
             theta = acos(r_ref.dot(n) / sin(phi))
-            print "phi", phi, "theta", theta
+            #print "phi", phi, "theta", theta
             try:
                 theta_m = asin(-order * ray.wavelength /
                                 (d * sin(phi)) - sin(theta))
             except Exception as e:
-                print "Discarding ray:", str(e)
+                #print "Discarding ray:", str(e)
                 return None
             rotation = Mat.RotateAxis(-degrees(theta + theta_m), g)
             r_diff = r_ref.transformDir(rotation)
@@ -103,7 +103,7 @@ class Surface(object):
         FIXME: Check that this is correct.
         """
         P = self.intersect(ray)
-        print P
+        #print P
         if P is not None:
             r = ray.direction
             n = self.normal(P)
@@ -113,7 +113,7 @@ class Surface(object):
             theta_in = acos(n.dot(r))
             if sin(theta_in) == 0:
                 return ray
-            print i1, i2, sin(theta_in)
+            #print i1, i2, sin(theta_in)
             theta_out = asin((i1 / i2) * sin(theta_in))
             v = r % n
             r2 = (-n).transformDir(Mat.RotateAxis(degrees(theta_out), v))

@@ -18,4 +18,3 @@ class Rotation(Vec):
 
 class Length(float):
     pass
-a=2
