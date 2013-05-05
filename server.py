@@ -20,7 +20,7 @@ def staticindex():
     return static_file('index.html', root='ui')
 
 
-@route('/<filepath:path>')
+@route('/static/<filepath:path>')
 def staticpath(filepath):
     return static_file(filepath, root='ui')
 
