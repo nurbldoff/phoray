@@ -170,7 +170,7 @@ class Application(tornado.web.Application):
     def __init__(self):
         #args = dict(data=data, trace_conn=trace_router, pool=pool, queue=queue)
         handlers = [
-            (r'/index.html', MainHandler),
+            (r'/', MainHandler),
             (r'/schema', SchemaHandler),
             (r'/system', SystemHandler),
             (r'/create', CreateHandler),

@@ -1,16 +1,13 @@
 import copy
 import json
 from pprint import pprint
+from time import time
 
 from bottle import get, post, request, run, static_file, route
 
 from phoray.meta import (classes, schemas, create_system, create_element,
                          create_source, create_geometry)
-#from phoray.phoray import current_id
 import util
-
-
-data = []
 
 
 # == Route callbacks ===
@@ -83,6 +80,7 @@ def get_mesh():
 @get('/trace')
 def trace():
     """Trace the paths of a number of rays through a system."""
+    t0 = time()
     query = request.query
     system = data[int(query.system)]
 
@@ -100,7 +98,7 @@ def trace():
             traces.append(tmp)
         result[i] = traces
 
-    return {"traces": result}
+    return dict(traces=result, time=time() - t0)
 
 
 @get('/footprint')
@@ -113,5 +111,7 @@ def footprint():
     return {"footprint": data[sys_n].elements[ele_n].footprint}
 
 
-# Start the server
-run(host='localhost', port=8080, debug=True, reloader=True)
+if __name__ == "__main__":
+    data = []
+    # Start the server
+    run(host='localhost', port=8080, debug=True, reloader=True)

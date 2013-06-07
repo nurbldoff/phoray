@@ -86,9 +86,8 @@ class OpticalSystem(Member):
             for i in xrange(len(self.elements)):
                 if r is None:
                     break
-                else:
-                    axis.append(r.endpoint)
-                    r = self.elements[i].propagate(r)
+                axis.append(r.endpoint)
+                r = self.elements[i].propagate(r)
             return axis
         else:
             return []
@@ -100,6 +99,11 @@ class Free(OpticalSystem):
 
 
 class Sequential(OpticalSystem):
+
+    """A system where each element is positioned relative to the previous.
+
+    Still a work in progress. Not even sure exactly how it should behave.
+    """
 
     def get_axis(self, source=0):
         """Return the directions of the segments of the optical axis"""

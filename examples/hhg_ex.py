@@ -1,6 +1,6 @@
 from math import *
 from ..phoray import phoray
-from ..phoray.vector import Vector
+from ..phoray import Vec, Mat
 import beam4
 from shay import wl
 #from quantities import m, mm, radian, degree, sin, cos, tan

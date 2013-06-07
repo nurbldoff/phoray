@@ -1,5 +1,5 @@
 from __future__ import division
-from phoray import *
+from phoray.phoray import *
 import rowland2
 from math import *
 from random import random, choice

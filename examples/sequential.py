@@ -1,5 +1,5 @@
 from math import *
-import phoray
+from phoray import phoray
 from vector import Vector
 import beam4
 

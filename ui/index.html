@@ -67,7 +67,7 @@
 
     <div class="sections">
       <div data-bind="visible: selected_system, with: selected_system" class="wrap">
-        <div class="grids section">
+        <div class="grids section" data-bind="visible: $root.selected_system() && !$root.selected_source() && !$root.selected_element()">
           <div class="system">
             <div class="header">
               <div class="grid-9">
@@ -110,7 +110,8 @@
         </div>
 
         <!-- SOURCE PROPERTIES -->
-        <div data-bind="visible: $root.selected_source(), with: $root.selected_source"
+        <div data-bind="visible: $root.selected_source(),
+                        with: $root.selected_source"
              class="grids section">
           <div class="" data-bind="css: 'source'">
             <div class="header">
@@ -203,37 +204,43 @@
 
   <script type="text/html" id="property-number">
     <div class="grid-6 label" data-bind="text: name"> </div>
-    <input class="grid-6" type="number" data-bind="value: value.forceNumeric()"/>
+    <input class="grid-6" data-bind="value: value.forceNumeric()"/>
   </script>
 
   <script type="text/html" id="property-integer">
     <div class="grid-6 label" data-bind="text: name"> </div>
-    <input class="grid-6" type="number" data-bind="value: value.forceInteger()"/>
+    <input class="grid-6" type="number" data-bind="value: value.forceInteger(),
+                                                   valueUpdate: 'keyup'"/>
   </script>
 
   <script type="text/html" id="property-length">
     <div class="grid-6 label" data-bind="text: name"> </div>
-    <input class="grid-6" type="number" data-bind="value: value.forceNonZero()">
+    <input class="grid-6" type="number" data-bind="value: value.forceNonZero(),
+                                                   valueUpdate: 'keyup'"/>
   </script>
 
   <script type="text/html" id="property-angle">
       <div class="grid-6 label" data-bind="text: name"> </div>
-      <input class="grid-6" type="number" data-bind="value: value.forceNumeric()">
+      <input class="grid-6" type="number" data-bind="value: value.forceNumeric(),
+                                                     valueUpdate: 'keyup'"/>
   </script>
-
 
   <script type="text/html" id="property-position">
     <div class="grid-12 label" data-bind="text: name"> </div>
 
     <div class="attrib">
       <div class="grid-1 to-right"> x: </div>
-      <input class="grid-3" type="number" data-bind="value: value.x.forceNumeric()">
+      <input class="float-value grid-3" type="number"
+             data-bind="value: value.x.forceNumeric(), valueUpdate: 'keyup'"/>
 
       <div class="grid-1 to-right"> y: </div>
-      <input class="grid-3" type="number" data-bind="value: value.y.forceNumeric()">
+      <input class="float-value grid-3" type="number"
+             data-bind="value: value.y.forceNumeric(), valueUpdate: 'keyup'"/>
 
       <div class="grid-1 to-right"> z: </div>
-      <input class="grid-3" type="number" data-bind="value: value.z.forceNumeric()">
+      <input class="float-value grid-3" type="number"
+             data-bind="value: value.z.forceNumeric(), valueUpdate: 'keyup'"/>
+
     </div>
   </script>
 
@@ -265,14 +272,14 @@
 
   <script src="static/js/libs/knockout-2.2.1.debug.js"></script>
   <script src="static/js/libs/knockout.mapping-latest.js"></script>
-  <script src="static/js/libs/knockout.validation.js"></script>
 
   <script src="static/js/libs/three.js"></script>
   <script src="static/js/libs/OrthographicAspectCamera.js"></script>
   <script src="static/js/libs/TrackballControls.js"></script>
   <script src="static/js/libs/Detector.js"></script>
 
-  <script src="static/js/libs/jquery-1.8.3.min.js"></script>
+  <!-- <script src="static/js/libs/jquery-1.8.3.min.js"></script> -->
+  <script src="static/js/libs/jquery-2.0.1.js"></script>
   <script src="static/js/libs/jquery-ui-1.10.1.custom/js/jquery-ui-1.10.1.custom.js"></script>
   <script src="static/js/libs/d3.js"></script>
   <script src="static/js/libs/jquery.flot.js"></script>
@@ -281,6 +288,7 @@
   <script src="static/js/libs/sockjs-0.3.4.min.js"></script>
 
   <script src="static/js/knockout-utils.js"></script>
+  <script src="static/js/jquery-plugins.js"></script>
   <script src="static/js/scene.js"></script>
   <script src="static/js/plot.js"></script>
   <script src="static/js/main.js"></script>

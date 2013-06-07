@@ -18,7 +18,7 @@ def dict_to_list(d):
     l = []
     if indexes:
         for i in range(int(max(indexes)) + 1):
-            l.append(d[str(i)] if d[str(i)] else {})
+            l.append(d[str(i)] if str(i) in d else {})
     return l
 
 

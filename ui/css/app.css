@@ -5,6 +5,10 @@ body {
     font-family: sans;
 }
 
+fisk {
+    font-size: xx-large;
+}
+
 .wrap {
     padding: 5px;
 }
@@ -38,7 +42,7 @@ div.systems {
 }
 
 .systems .selected {
-    color: white;
+
 }
 
 .swatch {
@@ -56,15 +60,15 @@ div.systems {
     border-radius: 5px;
 }
 
-.section .system {
+.section .system, .systems .system .selected {
     background-color: #ec7;
 }
 
-.section .source {
+.section .source, .systems .source .selected {
     background-color: #bcf;
 }
 
-.section .element {
+.section .element, .systems .element .selected {
     background-color: #9d9;
 }
 
@@ -76,19 +80,18 @@ div.systems {
 }
 
 .systems .selected {
-    color: white;
     background: #88f;
 }
 
-.section .system .header, .systems .system .selected {
+.section .system .header {
     background: #983;
 }
 
-.section .source .header, .systems .source .selected {
+.section .source .header {
     background: #78a;
 }
 
-.section .element .header, .systems .element .selected {
+.section .element .header {
     background: #696;
 }
 

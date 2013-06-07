@@ -270,18 +270,18 @@
               });
 
         // SockJS connection for Trace results
-        var sock = new SockJS('/traceconn');
-        sock.onopen = function() {
-            console.log('open');
-            sock.send({hej:1});
-        };
-        sock.onmessage = function(e) {
-            console.log('message', e.data);
-            self.draw_traces(e.data);
-        };
-        sock.onclose = function() {
-            console.log('close');
-        };
+        // var sock = new SockJS('/traceconn');
+        // sock.onopen = function() {
+        //     console.log('open');
+        //     sock.send({hej:1});
+        // };
+        // sock.onmessage = function(e) {
+        //     console.log('message', e.data);
+        //     self.draw_traces(e.data);
+        // };
+        // sock.onclose = function() {
+        //     console.log('close');
+        // };
 
         self.update = function (data) {
             // We need to avoid sending lots of times (and potential loops)
@@ -336,18 +336,18 @@
                 // No more tracing until we're done with this one. Primitive, but it will
                 // have to do until the server is more asynchronous.
                 tracing = true;
-                sock.send({n: n, system: self.systems.indexOf(self.selected_system())});
-                // $.get("/trace", {n: n, system: self.systems.indexOf(self.selected_system())},
-                //       function (data) {
-                //           view.clear_traces();
-                //           view.draw_traces(data.traces, self.selected_system().args.sources().map(
-                //               function(src) {return src.args.color();}));
-                //           tracing = false;
-                //           if (trace_queued) {
-                //               trace_queued = false;
-                //               self.trace();
-                //           }
-                //       });
+                //sock.send({n: n, system: self.systems.indexOf(self.selected_system())});
+                $.get("/trace", {n: n, system: self.systems.indexOf(self.selected_system())},
+                      function (data) {
+                          view.clear_traces();
+                          view.draw_traces(data.traces, self.selected_system().args.sources().map(
+                              function(src) {return src.args.color();}));
+                          tracing = false;
+                          if (trace_queued) {
+                              trace_queued = false;
+                              self.trace();
+                          }
+                      });
             } else {
                 trace_queued = true;
             }
@@ -448,6 +448,7 @@
 
         self.select_element = function (element, system) {
             self.selected_source(null);
+            //self.selected_system(null);
             if (!!system) {
                 self.selected_system(system);
             }
@@ -456,6 +457,7 @@
 
         self.select_source = function (source, system) {
             self.selected_element(null);
+            //self.selected_system(null);
             if (!!system) {
                 self.selected_system(system);
             }
@@ -514,7 +516,10 @@
                 list.splice(index + 1, 0, element);
             }
         };
+
     };
 
+    // add up/down arrowkey behavior to numeric inputs
+    $(document).on("keypress", "input[type=number]", updown);
     ko.applyBindings(new MainViewModel());
 })();
