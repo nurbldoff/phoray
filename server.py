@@ -98,7 +98,9 @@ def trace():
             traces.append(tmp)
         result[i] = traces
 
-    return dict(traces=result, time=time() - t0)
+    dt = time() - t0
+    print "traced %d rays, took %f s." % (n, dt)
+    return dict(traces=result, time=dt)
 
 
 @get('/footprint')

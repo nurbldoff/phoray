@@ -58,8 +58,8 @@
       </div>
     </div>
 
-    <div class="wrap">
-      <div class="grids">
+    <div class="wrap grids">
+      <div class="">
         <button class="grid-6" data-bind="click: add_system">Add system</button>
         <button class="grid-6" data-bind="click: send">Send all</button>
       </div>
@@ -98,13 +98,13 @@
             <!-- /ko -->
 
             <div class="wrap">
-              <div class="grids">
-                <button class="grid-6" data-bind="click: $root.add_source">Add Source</button>
-                <button class="grid-6" data-bind="click: $root.add_element">Add Element</button>
-
-                <button class="grid-6" data-bind="click: $data.trace">Trace</button>
-                <button class="grid-6" data-bind="click: $data.clear_traces">Clear trace</button>
-              </div>
+                <div>
+                  <button class="grid-6" data-bind="click: $root.add_source">Add Source</button>
+                  <button class="grid-6" data-bind="click: $root.add_element">Add Element</button>
+                </div><div>
+                  <button class="grid-6" data-bind="click: $data.trace">Trace</button>
+                  <button class="grid-6" data-bind="click: $data.clear_traces">Clear trace</button>
+                </div>
             </div>
           </div>
         </div>
@@ -112,23 +112,26 @@
         <!-- SOURCE PROPERTIES -->
         <div data-bind="visible: $root.selected_source(),
                         with: $root.selected_source"
-             class="grids section">
-          <div class="" data-bind="css: 'source'">
+             class="section grids">
+          <div class="source" data-bind="css: 'source'">
             <div class="header">
               <div class="grid-8">
                 <span data-bind="text: 'Source'"></span>
-                </span>
               </div>
 
-              <span data-bind="click: $root.move_element_up"
-                    class="grid-1 ui-icon ui-icon-arrowthick-1-n" title="Move up">^</span>
-              <span data-bind="click: $root.move_element_down"
-                    class="grid-1 ui-icon ui-icon-arrowthick-1-s" title="Move down">v</span>
-              <span data-bind="click: $root.clone_source"
-                    class="grid-1 ui-icon ui-icon-copy" title="Clone">X</span>
-              <span data-bind="click: $root.remove_source"
-                    class="grid-1 ui-icon ui-icon-trash" title="Remove">X</span>
-
+              <div class="grid-1">
+                <span data-bind="click: $root.move_element_up"
+                      class="ui-icon ui-icon-arrowthick-1-n" title="Move up">^</span>
+              </div><div class="grid-1">
+                <span data-bind="click: $root.move_element_down"
+                      class="ui-icon ui-icon-arrowthick-1-s" title="Move down">v</span>
+              </div><div class="grid-1">
+                <span data-bind="click: $root.clone_source"
+                      class="ui-icon ui-icon-copy" title="Clone">X</span>
+              </div><div class="grid-1">
+                <span data-bind="click: $root.remove_source"
+                      class="ui-icon ui-icon-trash" title="Remove">X</span>
+              </div>
             </div>
 
             <div class="attrib">
@@ -156,16 +159,22 @@
                 </span>
               </div>
 
-              <span data-bind="click: $root.footprint"
-                    class="grid-1 ui-icon ui-icon-image" title="Plot footprint">P</span>
-              <span data-bind="click: $root.move_element_up"
-                    class="grid-1 ui-icon ui-icon-arrowthick-1-n" title="Move up">^</span>
-              <span data-bind="click: $root.move_element_down"
-                    class="grid-1 ui-icon ui-icon-arrowthick-1-s" title="Move down">v</span>
-              <span data-bind="click: $root.clone_element"
-                    class="grid-1 ui-icon ui-icon-copy" title="Clone">X</span>
-              <span data-bind="click: $root.remove_element"
-                    class="grid-1 ui-icon ui-icon-trash" title="Remove">X</span>
+              <div class="grid-1">
+                <span data-bind="click: $root.footprint"
+                      class="ui-icon ui-icon-image" title="Plot footprint">P</span>
+              </div><div class="grid-1">
+                <span data-bind="click: $root.move_element_up"
+                      class="ui-icon ui-icon-arrowthick-1-n" title="Move up">^</span>
+              </div><div class="grid-1">
+                <span data-bind="click: $root.move_element_down"
+                      class="ui-icon ui-icon-arrowthick-1-s" title="Move down">v</span>
+              </div><div class="grid-1">
+                <span data-bind="click: $root.clone_element"
+                      class="ui-icon ui-icon-copy" title="Clone">X</span>
+              </div><div class="grid-1">
+                <span data-bind="click: $root.remove_element"
+                      class="ui-icon ui-icon-trash" title="Remove">X</span>
+              </div>
             </div>
 
             <div class="attrib">

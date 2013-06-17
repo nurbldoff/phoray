@@ -39,7 +39,8 @@ class Surface(object):
         FIXME: special case of n and x-axis parallel
         """
         normal = self.normal(p)
-        xaxis = Vec(1, 0, 0)
+        xaxis = Vec(1, 0, 0)  # Note: Grating lines are always perp. to
+                              # local X axis.
         a = normal.cross(xaxis)
         rotation = Mat().rotateAxis(90, a)
         return normal.transformDir(rotation).normalize()
@@ -190,8 +191,10 @@ class Sphere(Surface):
 
     def __init__(self, R=Length(1), *args, **kwargs):
         self.R = R
-        kwargs["xsize"] = min(kwargs["xsize"], abs(R))
-        kwargs["ysize"] = min(kwargs["ysize"], abs(R))
+        if "xsize" in kwargs:
+            kwargs["xsize"] = min(kwargs["xsize"], abs(R))
+        if "ysize" in kwargs:
+            kwargs["ysize"] = min(kwargs["ysize"], abs(R))
         Surface.__init__(self, *args, **kwargs)
 
     def normal(self, p):
@@ -258,7 +261,8 @@ class Cylinder(Surface):
 
     def __init__(self, R=Length(1.0), *args, **kwargs):
         self.R = R
-        kwargs["ysize"] = min(kwargs["ysize"], abs(R * 1.5))
+        if "ysize" in kwargs:
+            kwargs["ysize"] = min(kwargs["ysize"], abs(R * 1.5))
         Surface.__init__(self, *args, **kwargs)
 
     def normal(self, p):

@@ -292,7 +292,7 @@
             self.listener.resume();
         };
 
-        var update = function (data) {
+        var _update = function (data) {
             //self.set(data);
             console.log("got", data);
             if (data.systems) {
@@ -312,7 +312,7 @@
             console.log("send", data);
             $.ajax({url: "/system", type: "POST",
                     data: JSON.stringify(data), contentType: "application/json",
-                    success: update});
+                    success: _update});
         };
 
         var tracing = false,  // flag used to block new traces while tracing
@@ -331,7 +331,7 @@
 
         // Ask the server to trace us some rays
         self.trace = function (n) {
-            n = n || 100;
+            n = n || 1000;
             if (!tracing) {
                 // No more tracing until we're done with this one. Primitive, but it will
                 // have to do until the server is more asynchronous.
@@ -339,6 +339,7 @@
                 //sock.send({n: n, system: self.systems.indexOf(self.selected_system())});
                 $.get("/trace", {n: n, system: self.systems.indexOf(self.selected_system())},
                       function (data) {
+                          console.log("Trace took", data.time, "s");
                           view.clear_traces();
                           view.draw_traces(data.traces, self.selected_system().args.sources().map(
                               function(src) {return src.args.color();}));
