@@ -4,7 +4,6 @@ from collections import defaultdict
 
 from member import Member
 from surface import Surface
-from minivec import Vec, Mat
 from ray import Ray
 
 
@@ -22,8 +21,8 @@ class Element(Member):
         """
         new_ray = self._propagate(ray)
         if new_ray is not None:
-            self.footprint[source].append((new_ray.endpoint.x,
-                                           new_ray.endpoint.y,
+            self.footprint[source].append((new_ray.endpoint[0],
+                                           new_ray.endpoint[1],
                                            new_ray.wavelength))
         return new_ray
 
@@ -54,7 +53,7 @@ class Detector(Element):
     def _propagate(self, ray):
         ray0 = self.localize(ray)
         p = self.geometry.intersect(ray0)
-        if p:
+        if p is not None:
             pos = self.globalize_vector(p)
             return Ray(pos, None, ray.wavelength)
         else:
@@ -71,7 +70,7 @@ class Screen(Element):
     def _propagate(self, ray):
         ray0 = self.localize(ray)
         p = self.geometry.intersect(ray0)
-        if p:
+        if p is not None:
             p = self.globalize_vector(p)
             return Ray(p, ray.direction, ray.wavelength)
         else:

@@ -1,7 +1,10 @@
 from __future__ import division
 from math import *
 
-from minivec import Vec, Mat
+from numpy import array, dot, cross
+from numpy.linalg import norm
+from transformations import rotation_matrix
+
 from ray import Ray
 from solver import quadratic
 from . import Length
@@ -39,14 +42,15 @@ class Surface(object):
         FIXME: special case of n and x-axis parallel
         """
         normal = self.normal(p)
-        xaxis = Vec(1, 0, 0)  # Note: Grating lines are always perp. to
+        xaxis = array((1, 0, 0))  # Note: Grating lines are always perp. to
                               # local X axis.
-        a = normal.cross(xaxis)
-        rotation = Mat().rotateAxis(90, a)
-        return normal.transformDir(rotation).normalize()
+        a = cross(normal, xaxis)
+        rot = rotation_matrix(pi/2, a)
+        d = dot(normal, rot[:3, :3].T)
+        # TODO: normalize?
+        return d / norm(d)
 
     def reflect(self, ray):
-
         """
         Reflect the given ray in the surface, returning the reflected ray.
         """
@@ -56,7 +60,9 @@ class Surface(object):
         if P is None:
             return None
         else:
-            return Ray(P, r.reflect(self.normal(P)))
+            normal = self.normal(P)
+            refl = r - (normal * 2.0 * dot(r, normal))
+            return Ray(P, refl)
 
     def diffract(self, ray, d, order, line_spacing_function=None):
 
@@ -80,11 +86,12 @@ class Surface(object):
             n = self.normal(P)
             r_ref = refl.direction
             g = self.grating_direction(P)
+
             # TODO: seems like there should be a simpler way to do
             # this. But remember that the direction of the grating
             # must be taken into account!
-            phi = acos(r_ref.dot(g))
-            theta = acos(r_ref.dot(n) / sin(phi))
+            phi = acos(dot(r_ref, g))
+            theta = acos(dot(r_ref, n) / sin(phi))
             #print "phi", phi, "theta", theta
             try:
                 theta_m = asin(-order * ray.wavelength /
@@ -92,8 +99,8 @@ class Surface(object):
             except Exception as e:
                 #print "Discarding ray:", str(e)
                 return None
-            rotation = Mat.RotateAxis(-degrees(theta + theta_m), g)
-            r_diff = r_ref.transformDir(rotation)
+            #rotation = Mat.RotateAxis(-degrees(theta + theta_m), g)
+            r_diff = dot(r_ref, rotation_matrix(theta + theta_m, g)[:3, :3].T)
             return Ray(P, r_diff, ray.wavelength)
 
     def refract(self, ray, i1, i2):
@@ -108,16 +115,16 @@ class Surface(object):
         if P is not None:
             r = ray.direction
             n = self.normal(P)
-            dot = n.dot(r)
-            if dot >= 0:
+            dotp = dot(n, r)
+            if dotp >= 0:
                 n = -n
-            theta_in = acos(n.dot(r))
+            theta_in = acos(dot(n, r))
             if sin(theta_in) == 0:
                 return ray
             #print i1, i2, sin(theta_in)
             theta_out = asin((i1 / i2) * sin(theta_in))
             v = r % n
-            r2 = (-n).transformDir(Mat.RotateAxis(degrees(theta_out), v))
+            r2 = dot(-n, rotation_matrix(theta_out, v)[:3, :3].T)
             return Ray(P, r2, ray.wavelength)
         else:
             return None
@@ -136,30 +143,30 @@ class Plane(Surface):
     """
 
     def normal(self, p):
-        return Vec(0, 0, 1)
+        return array((0, 0, 1))
 
     def intersect(self, ray):
-        r = ray.direction
+        rx, ry, rz = r = ray.direction
 
-        if ray.direction.z < 0:  # backlit
+        if rz < 0:  # backlit
             #print "backlit"
             return None
 
-        a = ray.endpoint
-        b = a + r
+        ax, ay, az = a = ray.endpoint
+        bx, by, bz = b = a + r
 
-        if b.z == a.z:  # parallel case
+        if bz == az:  # parallel case
             print "parallel"
             return None
         else:
-            t = -a.z / (b.z - a.z)
+            t = -az / (bz - az)
             if t < 0:
                 # Backtracking the ray -> no intersection
                 return None
             p = a + t * r
             if (self.xsize is None and self.ysize is None) or \
-                    (-self.xsize / 2 <= p.x <= self.xsize / 2 and
-                     -self.ysize / 2 <= p.y <= self.ysize / 2):
+                    (-self.xsize / 2 <= p[0] <= self.xsize / 2 and
+                     -self.ysize / 2 <= p[1] <= self.ysize / 2):
                 return p
             else:
                 print "outside"
@@ -198,21 +205,19 @@ class Sphere(Surface):
         Surface.__init__(self, *args, **kwargs)
 
     def normal(self, p):
-        return -Vec(p.x, p.y, p.z + self.R) / self.R
+        #return -Vec(p.x, p.y, p.z + self.R) / self.R
+        return -(p + array((0, 0, self.R))) / self.R
 
     def intersect(self, ray):
 
-        r = ray.direction
+        rx, ry, rz = r = ray.direction
         #if r.z * self.R <= 0:  # backlit
             #print "backlit"
             #return None
-
-        a = ray.endpoint + Vec(0, 0, self.R)
-
-        t = quadratic(r.z ** 2 + r.x ** 2 + r.y ** 2,
-                      2 * a.z * r.z + 2 * a.x * r.x + 2 * a.y * r.y,
-                      a.z ** 2 + a.x ** 2 + a.y ** 2 - self.R ** 2)
-
+        ax, ay, az = a = ray.endpoint + array((0, 0, self.R))
+        t = quadratic(rz ** 2 + rx ** 2 + ry ** 2,
+                      2 * az * rz + 2 * ax * rx + 2 * ay * ry,
+                      az ** 2 + ax ** 2 + ay ** 2 - self.R ** 2)
         if t is None or t < 0:  # no
             # intersection
             print "missed"
@@ -220,19 +225,19 @@ class Sphere(Surface):
         else:
             # Figure out which intersection we should use
             if self.R > 0:
-                if a.z + max(t) * r.z > 0:
+                if az + max(t) * rz > 0:
                     p = a + max(t) * r
                 else:
                     p = a + min(t) * r
             else:
-                if a.z + min(t) * r.z < 0:
+                if az + min(t) * rz < 0:
                     p = a + min(t) * r
                 else:
                     p = a + max(t) * r
             if (self.xsize is None and self.ysize is None) or (
-                    (-self.xsize / 2 <= p.x <= self.xsize / 2) and
-                    (-self.ysize / 2 <= p.y <= self.ysize / 2)):
-                return Vec(p.x, p.y, p.z - self.R)
+                    (-self.xsize / 2 <= p[0] <= self.xsize / 2) and
+                    (-self.ysize / 2 <= p[1] <= self.ysize / 2)):
+                return p - array((0, 0, self.R))
                 #return Vec(p.x, p.y, p.z)
             else:
                 print "outside"
@@ -266,38 +271,38 @@ class Cylinder(Surface):
         Surface.__init__(self, *args, **kwargs)
 
     def normal(self, p):
-        return (Vec(0, -p.y, -p.z - self.R)) / self.R
+        return array((0, -p[1], -p[2] - self.R)) / self.R
 
     def intersect(self, ray):
-        r = ray.direction
+        rx, ry, rz = r = ray.direction
 
-        if r.z * self.R <= 0:  # backlit
+        if rz * self.R <= 0:  # backlit
             return None
 
-        a = ray.endpoint + Vec(0, 0, self.R)
-        b = a + r
+        ax, ay, az = a = ray.endpoint + array((0, 0, self.R))
+        bx, by, bz = a + r
 
-        t = quadratic((b.z - a.z) ** 2 + (b.y - a.y) ** 2,
-                      2 * a.z * (b.z - a.z) + 2 * a.y * (b.y - a.y),
-                      a.z ** 2 + a.y ** 2 - self.R ** 2)
+        t = quadratic((bz - az) ** 2 + (by - ay) ** 2,
+                      2 * az * (bz - az) + 2 * ay * (by - ay),
+                      az ** 2 + ay ** 2 - self.R ** 2)
 
         if t is None or t < 0:  # no intersection
             return None
         else:
             if self.R > 0:
-                if a.z + max(t) * r.z > 0:
+                if az + max(t) * rz > 0:
                     p = a + max(t) * r
                 else:
                     p = a + min(t) * r
             else:
-                if a.z + min(t) * r.z < 0:
+                if az + min(t) * rz < 0:
                     p = a + min(t) * r
                 else:
                     p = a + max(t) * r
             if (self.xsize is None and self.ysize is None) or (
-                    -self.xsize / 2 <= p.x <= self.xsize / 2 and
-                    -self.ysize / 2 <= p.y <= self.ysize / 2):
-                return Vec(p.x, p.y, p.z - self.R)
+                    -self.xsize / 2 <= p[0] <= self.xsize / 2 and
+                    -self.ysize / 2 <= p[1] <= self.ysize / 2):
+                return p - array((0, 0, self.R))
             else:
                 return None
 
@@ -334,22 +339,22 @@ class Ellipsoid(Surface):
         Surface normal at point p, calculated through the gradient
         """
         a, b, c = self.a, self.b, self.c
-        n = Vec(-2 * p.x / a ** 2,
-                -2 * p.y / b ** 2,
-                -2 * (p.z + c) / c ** 2)
+        n = array((-2 * p[0] / a ** 2,
+                -2 * p[1] / b ** 2,
+                -2 * (p[2] + c) / c ** 2))
         return n.normalize()
 
     def intersect(self, ray):
         a, b, c = self.a, self.b, self.c
-        r = ray.direction
-        p0 = ray.endpoint + Vec(0, 0, c)
+        rx, ry, rz = r = ray.direction
+        p0x, p0y, p0z = p0 = ray.endpoint + array((0, 0, c))
 
         t = quadratic(
-            r.z ** 2 + c ** 2 * r.x ** 2 / a ** 2 +
-                c ** 2 * r.y ** 2 / b ** 2,
-            2 * p0.z * r.z + c ** 2 * 2 * p0.x * r.x /
-                a ** 2 + c ** 2 * 2 * p0.y * r.y / b ** 2,
-            p0.z ** 2 + c ** 2 * p0.x ** 2 / a ** 2 + c ** 2 * p0.y ** 2 /
+            rz ** 2 + c ** 2 * rx ** 2 / a ** 2 +
+                c ** 2 * ry ** 2 / b ** 2,
+            2 * p0z * rz + c ** 2 * 2 * p0x * rx /
+                a ** 2 + c ** 2 * 2 * p0y * ry / b ** 2,
+            p0z ** 2 + c ** 2 * p0x ** 2 / a ** 2 + c ** 2 * p0y ** 2 /
                 b ** 2 - c ** 2)
 
         if t is None:  # no intersection
@@ -357,19 +362,19 @@ class Ellipsoid(Surface):
         else:
             # Figure out which intersection we should use
             if self.a * self.b * self.c > 0:
-                if p0.z + max(t) * r.z > 0:
+                if p0z + max(t) * rz > 0:
                     p = p0 + max(t) * r
                 else:
                     p = p0 + min(t) * r
             else:
-                if p0.z + min(t) * r.z < 0:
+                if p0z + min(t) * rz < 0:
                     p = p0 + min(t) * r
                 else:
                     p = p0 + max(t) * r
             if (self.xsize is None and self.ysize is None) or (
-                    (-self.xsize / 2 <= p.x <= self.xsize / 2) and
-                    (-self.ysize / 2 <= p.y <= self.ysize / 2)):
-                return Vec(p.x, p.y, p.z - c)
+                    (-self.xsize / 2 <= p[0] <= self.xsize / 2) and
+                    (-self.ysize / 2 <= p[1] <= self.ysize / 2)):
+                return array((px, py, pz - c))
             else:
                 return None
 
@@ -409,18 +414,18 @@ class Paraboloid(Surface):
 
         self.concave = a * b * c < 0
 
-    def normal(self, p):
-        f = sqrt((self.d * p.x) ** 2 + (self.e * p.y) ** 2 + 1)
-        return Vec(self.d * p.x / f, self.e * p.y / f, 1 / f)
+    def normal(self, (px, py, pz)):
+        f = sqrt((self.d * px) ** 2 + (self.e * py) ** 2 + 1)
+        return array((self.d * px / f, self.e * py / f, 1 / f))
 
     def intersect(self, ray):
-        r = ray.direction
-        p = ray.endpoint
+        rx, ry, rz = r = ray.direction
+        px, py, pz = p = ray.endpoint
         a2, b2, c = self.a ** 2, self.b ** 2, self.c
         xsize, ysize = self.xsize, self.ysize
-        t = quadratic(r.x ** 2 / a2 + r.y ** 2 / b2,
-                      2 * p.x * r.x / a2 + 2 * p.y * r.y / b2 - r.z / c,
-                      p.x ** 2 / a2 + p.y ** 2 / b2 - p.z / c)
+        t = quadratic(rx ** 2 / a2 + ry ** 2 / b2,
+                      2 * px * rx / a2 + 2 * py * ry / b2 - rz / c,
+                      px ** 2 / a2 + py ** 2 / b2 - pz / c)
         if t is None or t < 0:  # no intersection
             return None
         else:
@@ -429,8 +434,8 @@ class Paraboloid(Surface):
             else:
                 ip = p + min(t) * r
             if ((xsize is None and ysize is None)
-                or (-xsize / 2 <= ip.x <= xsize / 2
-                    and -ysize / 2 <= ip.y <= ysize / 2)):
+                or (-xsize / 2 <= ip[0] <= xsize / 2
+                    and -ysize / 2 <= ip[1] <= ysize / 2)):
                 return ip
             else:
                 return None

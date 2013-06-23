@@ -3,7 +3,8 @@ from itertools import count
 from math import *
 
 from member import Member
-from minivec import Vec, Mat
+#from minivec import Vec, Mat
+from vector import Vector
 from ray import Ray
 
 
@@ -171,7 +172,7 @@ class Sequential(OpticalSystem):
                   direction=source.globalize_direction(source.axis))
         for i, element in enumerate(self.elements):
             element.position = position
-            element.rotation = Vec(rotation.x, rotation.y, element.rotation.z)
+            element.rotation = Vector(rotation.x, rotation.y, element.rotation.z)
             new_ray = element.propagate(ray)
             if new_ray is None:
                 return
