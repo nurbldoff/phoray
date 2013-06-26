@@ -32,7 +32,7 @@ class PlaneSurfaceTestCase(PhorayTestCase):
 class SphereSurfaceTestCase(PhorayTestCase):
 
     def test_reflect(self):
-        plane = Sphere(R=1)
+        plane = Sphere(1)
         ray = Ray(array((0, 0, -1)), array((A, B, 1)) / sqrt(A**2 + B**2 + 1))
         reflection = plane.reflect(ray)
         print ray, reflection
@@ -43,7 +43,7 @@ class SphereSurfaceTestCase(PhorayTestCase):
 class CylinderSurfaceTestCase(PhorayTestCase):
 
     def test_reflect(self):
-        surf = Cylinder(R=1)
+        surf = Cylinder(1)
         ray = Ray(array((0, 0, -1)), array((A, B, 1)) / sqrt(A**2 + B**2 + 1))
         reflection = surf.reflect(ray)
         self.assertTrue(allclose(reflection.direction[0], ray.direction[0]))
@@ -54,7 +54,7 @@ class CylinderSurfaceTestCase(PhorayTestCase):
 class ParaboloidSurfaceTestCase(PhorayTestCase):
 
     def test_reflect(self):
-        surf = Paraboloid(a=1, b=1, c=-1)
+        surf = Paraboloid(1, 1, -1)
         ray = Ray(array((0, 0, -0.25)), array((A, B, 1)))
         reflection = surf.reflect(ray)
         print reflection
