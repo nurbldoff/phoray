@@ -98,10 +98,10 @@ class Member(object):
                    ray.wavelength)
 
     def x_axis(self):
-        return self.globalize_vector(Vec(1, 0, 0))
+        return self.globalize_vector(array((1, 0, 0)))
 
     def y_axis(self):
-        return self.globalize_vector(Vec(0, 1, 0))
+        return self.globalize_vector(array((0, 1, 0)))
 
     def z_axis(self):
-        return self.globalize_vector(Vec(0, 0, 1))
+        return self.globalize_vector(array((0, 0, 1)))
