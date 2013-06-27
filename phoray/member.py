@@ -51,16 +51,15 @@ class Member(object):
         self._rotate = euler_matrix(*self.rotation, axes="rxyz")
         self._align = euler_matrix(*self.alignment, axes="rxyz")
 
-        self._matloc = concatenate_matrices(translation_matrix(-self.position),
-                                            invert_matrix(self._rotate),
+        self._matloc = concatenate_matrices(invert_matrix(self._align),
                                             translation_matrix(-self.offset),
-                                            invert_matrix(self._align)
-                                            )[:3, :3].T
-        self._matglob = concatenate_matrices(self._align,
-                                             translation_matrix(self.offset),
+                                            invert_matrix(self._rotate),
+                                            translation_matrix(-self.position)
+                                            ).T
+        self._matglob = concatenate_matrices(translation_matrix(self.position),
                                              self._rotate,
-                                             translation_matrix(self.position)
-                                             )[:3, :3].T
+                                             translation_matrix(self.offset),
+                                             self._align).T
 
     def localize_vector(self, v):
         #return (((v - self.position).transform(self._rotate.invert()) -

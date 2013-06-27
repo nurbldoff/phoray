@@ -58,5 +58,5 @@ class ParaboloidSurfaceTestCase(PhorayTestCase):
         ray = Ray(array((0, 0, -0.25)), array((A, B, 1)))
         reflection = surf.reflect(ray)
         print reflection
-        self.assertAlmostEqual(reflection.direction[0], 0)
-        self.assertAlmostEqual(reflection.direction[1], 0)
+        self.assertAlmostEquals(reflection.direction[0], 0)
+        self.assertAlmostEquals(reflection.direction[1], 0)
