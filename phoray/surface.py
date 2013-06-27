@@ -5,7 +5,7 @@ from math import *
 
 from numpy import array, dot, cross, max, min
 from numpy.linalg import norm
-from numba import autojit
+#from numba import autojit
 
 from transformations import rotation_matrix
 from ray import Ray
@@ -13,7 +13,6 @@ from solver import quadratic
 from . import Length
 
 
-@autojit
 class Surface(object):
     """
     An abstract 3D surface.
@@ -329,7 +328,6 @@ class Cylinder(Surface):
         return verts, faces
 
 
-@autojit
 class Ellipsoid(Surface):
 
     def __init__(self, a=Length(1.0), b=Length(1.0), c=Length(1.0),
@@ -402,7 +400,6 @@ class Ellipsoid(Surface):
         return verts, faces
 
 
-@autojit
 class Paraboloid(Surface):
     """
     A paraboloid (rotated parabola) described by z/c = (x/a)^2 + (y/b)^2

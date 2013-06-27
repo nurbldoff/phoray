@@ -1,10 +1,8 @@
 from math import sqrt
 
 import numpy as np
-from numba import autojit
 
 
-@autojit
 def quadratic(a, b, c):
     """
     Solve a quadratic function a*x**2 + b*y + c = 0

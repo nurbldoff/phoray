@@ -1,9 +1,7 @@
 from __future__ import division
 from numpy import array
-from numba import autojit
 
 
-@autojit
 class Ray(object):
     """
     A ray is defined by its endpoint P0 Vector(X0,Y0,Z0) and its

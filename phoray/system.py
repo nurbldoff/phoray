@@ -2,15 +2,10 @@
 from itertools import count
 from math import *
 
-from numba import autojit
-
 from member import Member
-#from minivec import Vec, Mat
-from vector import Vector
 from ray import Ray
 
 
-@autojit
 class OpticalSystem(Member):
 
     """An optical system consists of Sources and Elements.
@@ -102,7 +97,6 @@ class Free(OpticalSystem):
     """A completely free system."""
 
 
-@autojit
 class Sequential(OpticalSystem):
 
     """A system where each element is positioned relative to the previous.
@@ -176,13 +170,13 @@ class Sequential(OpticalSystem):
                   direction=source.globalize_direction(source.axis))
         for i, element in enumerate(self.elements):
             element.position = position
-            element.rotation = Vector(rotation.x, rotation.y, element.rotation.z)
+            element.rotation = rotation
             new_ray = element.propagate(ray)
             if new_ray is None:
                 return
             npor = ray.direction.cross(new_ray.direction)
             angle = ray.direction.angle(new_ray.direction)
-            position = element.position + element.offset.transform(Mat().rotate(rotation))
-            rotation = rotation + Mat().rotateAxis(angle, npor).decompose()[1]
+            #position = element.position + element.offset.transform(Mat().rotate(rotation))
+            #rotation = rotation + Mat().rotateAxis(angle, npor).decompose()[1]
 
             ray = new_ray
