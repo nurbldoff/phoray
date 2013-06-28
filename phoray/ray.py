@@ -2,6 +2,16 @@ from __future__ import division
 from numpy import array
 
 
+class Rays(object):
+
+    def __init__(self, endpoints, directions):
+        self.endpoints = endpoints
+        self.directions = directions
+
+    def __repr__(self):
+        return "%r, %r" % (self.endpoints, self.directions)
+
+
 class Ray(object):
     """
     A ray is defined by its endpoint P0 Vector(X0,Y0,Z0) and its

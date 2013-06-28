@@ -8,7 +8,7 @@ from numpy.linalg import norm
 #from numba import autojit
 
 from transformations import rotation_matrix
-from ray import Ray
+from ray import Ray, Rays
 from solver import quadratic
 from . import Length
 
@@ -53,19 +53,19 @@ class Surface(object):
         # TODO: normalize?
         return d / norm(d)
 
-    def reflect(self, ray):
+    def reflect(self, rays):
         """
         Reflect the given ray in the surface, returning the reflected ray.
         """
 
-        r = ray.direction
-        P = self.intersect(ray)
+        r = rays.directions
+        P = self.intersect(rays)
         if P is None:
             return None
         else:
             normal = self.normal(P)
-            refl = r - (normal * 2.0 * dot(r, normal))
-            return Ray(P, refl)
+            refl = r - (normal * 2.0 * dot(r, normal.T))
+            return Rays(P, refl)
 
     def diffract(self, ray, d, order, line_spacing_function=None):
 
@@ -145,35 +145,36 @@ class Plane(Surface):
     A plane through the origin and perpendicular to z, i.e. z = 0.
     """
 
-    def normal(self, p):
-        return array((0, 0, 1))
+    def normal(self, ps):
+        return array([(0, 0, 1, 0)] * len(ps))
 
-    def intersect(self, ray):
-        rx, ry, rz = r = ray.direction
+    def intersect(self, rays):
+        rx, ry, rz, _ = r = rays.directions.T
 
-        if rz < 0:  # backlit
-            #print "backlit"
-            return None
+        # if rz < 0:  # backlit
+        #     #print "backlit"
+        #     return None
 
-        ax, ay, az = a = ray.endpoint
-        bx, by, bz = b = a + r
+        ax, ay, az, _ = a = rays.endpoints.T
+        bx, by, bz, _ = a + r
 
         if bz == az:  # parallel case
             print "parallel"
             return None
         else:
             t = -az / (bz - az)
-            if t < 0:
-                # Backtracking the ray -> no intersection
-                return None
+            # if t < 0:
+            #     # Backtracking the ray -> no intersection
+            #     return None
             p = a + t * r
-            if (self.xsize is None and self.ysize is None) or \
-                    (-self.xsize / 2 <= p[0] <= self.xsize / 2 and
-                     -self.ysize / 2 <= p[1] <= self.ysize / 2):
-                return p
-            else:
-                print "outside"
-                return None
+            # if (self.xsize is None and self.ysize is None) or \
+            #         (-self.xsize / 2 <= p[0] <= self.xsize / 2 and
+            #          -self.ysize / 2 <= p[1] <= self.ysize / 2):
+            #     return p
+            # else:
+            #     print "outside"
+            #     return None
+            return p.T
 
     def mesh(self, res=10):
         verts = []
@@ -209,15 +210,15 @@ class Sphere(Surface):
 
     def normal(self, p):
         #return -Vec(p.x, p.y, p.z + self.R) / self.R
-        return -(p + array((0, 0, self.R))) / self.R
+        return -(p + array((0, 0, self.R, 0))) / self.R
 
     def intersect(self, ray):
 
-        rx, ry, rz = r = ray.direction
+        rx, ry, rz, _ = r = ray.directions.T
         #if r.z * self.R <= 0:  # backlit
             #print "backlit"
             #return None
-        ax, ay, az = a = ray.endpoint + array((0, 0, self.R))
+        ax, ay, az, _ = a = (ray.endpoints + array((0, 0, self.R, 0))).T
         t = quadratic(rz ** 2 + rx ** 2 + ry ** 2,
                       2 * az * rz + 2 * ax * rx + 2 * ay * ry,
                       az ** 2 + ax ** 2 + ay ** 2 - self.R ** 2)
@@ -237,14 +238,15 @@ class Sphere(Surface):
                     p = a + min(t) * r
                 else:
                     p = a + max(t) * r
-            if (self.xsize is None and self.ysize is None) or (
-                    (-self.xsize / 2 <= p[0] <= self.xsize / 2) and
-                    (-self.ysize / 2 <= p[1] <= self.ysize / 2)):
-                return p - array((0, 0, self.R))
-                #return Vec(p.x, p.y, p.z)
-            else:
-                print "outside"
-                return None
+            # if (self.xsize is None and self.ysize is None) or (
+            #         (-self.xsize / 2 <= p[0] <= self.xsize / 2) and
+            #         (-self.ysize / 2 <= p[1] <= self.ysize / 2)):
+            #     return p - array((0, 0, self.R))
+            #     #return Vec(p.x, p.y, p.z)
+            return p.T
+            # else:
+            #     print "outside"
+            #     return None
 
     def mesh(self, res=10):
         verts = []

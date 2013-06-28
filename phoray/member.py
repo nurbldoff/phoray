@@ -37,6 +37,7 @@ class Member(object):
         self._schema = None
 
     def _precalc(self):
+        # This is just the old pre-numpy code, remove
         self._rotate = Mat().rotate(self.rotation)
         self._align = Mat().rotate(self.alignment)
 
