@@ -3,8 +3,11 @@
 from __future__ import division
 from math import *
 
-from numpy import array, dot, cross, max, min
+import numpy as np
+from numpy import (array, dot, cross, max, min, where, arccos, arcsin, sin,
+                   abs)
 from numpy.linalg import norm
+
 #from numba import autojit
 
 from transformations import rotation_matrix
@@ -34,7 +37,7 @@ class Surface(object):
         """
         pass
 
-    def grating_direction(self, p):
+    def grating_direction(self, ps):
         """
         Returns a vector oriented along the grating lines (if any).
         This vector always lies in the plane containing the normal and
@@ -44,14 +47,13 @@ class Surface(object):
 
         FIXME: special case of n and x-axis parallel
         """
-        normal = self.normal(p)
-        xaxis = array((1, 0, 0))  # Note: Grating lines are always perp. to
-                              # local X axis.
+        normal = self.normal(ps)
+        xaxis = array((1, 0, 0))
         a = cross(normal, xaxis)
         rot = rotation_matrix(pi/2, a)
         d = dot(normal, rot[:3, :3].T)
         # TODO: normalize?
-        return d / norm(d)
+        return d
 
     def reflect(self, rays):
         """
@@ -64,22 +66,24 @@ class Surface(object):
             return None
         else:
             normal = self.normal(P)
-            refl = r - (normal * 2.0 * dot(r, normal.T))
-            return Rays(P, refl)
+            print "normal", normal[0]
+            dots = (r * normal).sum(axis=1) * 2.0
+            refl = r - (normal.T * dots).T
+            return Rays(P, refl, rays.wavelengths)
 
-    def diffract(self, ray, d, order, line_spacing_function=None):
+    def diffract(self, rays, d, order, line_spacing_function=None):
 
         """
         Diffract the given ray in the surface, returning the diffracted ray.
         """
 
-        P = self.intersect(ray)
+        P = self.intersect(rays)
         if P is None:
             return None
         else:
-            refl = self.reflect(ray)
-            if order == 0 or d == 0 or ray.wavelength == 0:
-                return refl
+            refl = self.reflect(rays)
+            # if order == 0 or d == 0 or rays.wavelength == 0:
+            #     return refl
             if d is None:
                 if line_spacing_function is None:
                     return refl
@@ -87,18 +91,18 @@ class Surface(object):
                     # VLS grating
                     d = line_spacing_function(P)
             n = self.normal(P)
-            r_ref = refl.direction
+            r_ref = refl.directions
             g = self.grating_direction(P)
 
             # TODO: seems like there should be a simpler way to do
             # this. But remember that the direction of the grating
             # must be taken into account!
-            phi = acos(dot(r_ref, g))
-            theta = acos(dot(r_ref, n) / sin(phi))
+            phi = arccos((r_ref * g).sum(axis=1))  # dot product
+            theta = arccos((r_ref * n).sum(axis=1) / sin(phi))
             #print "phi", phi, "theta", theta
             try:
-                theta_m = asin(-order * ray.wavelength /
-                                (d * sin(phi)) - sin(theta))
+                theta_m = arcsin(-order * ray.wavelength /
+                                  (d * sin(phi)) - sin(theta))
             except Exception as e:
                 #print "Discarding ray:", str(e)
                 return None
@@ -146,35 +150,38 @@ class Plane(Surface):
     """
 
     def normal(self, ps):
-        return array([(0, 0, 1, 0)] * len(ps))
+        return array([(0, 0, 1)] * len(ps))
 
     def intersect(self, rays):
-        rx, ry, rz, _ = r = rays.directions.T
+        rx, ry, rz = r = rays.directions.T
 
         # if rz < 0:  # backlit
         #     #print "backlit"
         #     return None
 
-        ax, ay, az, _ = a = rays.endpoints.T
-        bx, by, bz, _ = a + r
+        ax, ay, az = a = rays.endpoints.T
+        bx, by, bz = a + r
 
-        if bz == az:  # parallel case
-            print "parallel"
-            return None
-        else:
-            t = -az / (bz - az)
-            # if t < 0:
-            #     # Backtracking the ray -> no intersection
-            #     return None
-            p = a + t * r
-            # if (self.xsize is None and self.ysize is None) or \
-            #         (-self.xsize / 2 <= p[0] <= self.xsize / 2 and
-            #          -self.ysize / 2 <= p[1] <= self.ysize / 2):
-            #     return p
-            # else:
-            #     print "outside"
-            #     return None
-            return p.T
+        t = -az / (bz - az)
+        # if t < 0:
+        #     # Backtracking the ray -> no intersection
+        #     return None
+        p = a + t * r
+        px, py, pz = p
+        print "px", px.shape
+        halfxsize = self.xsize / 2
+        halfysize = self.ysize / 2
+        nans = np.empty((3, len(px)))
+        nans[:] = np.NaN
+        q = where((abs(px) <= halfxsize) & (abs(py) <= halfysize), p, nans)
+        # if (self.xsize is None and self.ysize is None) or \
+        #         (-self.xsize / 2 <= p[0] <= self.xsize / 2 and
+        #          -self.ysize / 2 <= p[1] <= self.ysize / 2):
+        #     return p
+        # else:
+        #     print "outside"
+        #     return None
+        return q.T
 
     def mesh(self, res=10):
         verts = []
@@ -202,6 +209,7 @@ class Sphere(Surface):
 
     def __init__(self, R=Length(1), *args, **kwargs):
         self.R = R
+        self.offset = array((0, 0, self.R))
         if "xsize" in kwargs:
             kwargs["xsize"] = min((kwargs["xsize"], abs(R)))
         if "ysize" in kwargs:
@@ -209,19 +217,18 @@ class Sphere(Surface):
         Surface.__init__(self, *args, **kwargs)
 
     def normal(self, p):
-        #return -Vec(p.x, p.y, p.z + self.R) / self.R
-        return -(p + array((0, 0, self.R, 0))) / self.R
+        return -(p + self.offset) / self.R
 
-    def intersect(self, ray):
+    def intersect(self, rays):
 
-        rx, ry, rz, _ = r = ray.directions.T
+        rx, ry, rz = r = rays.directions.T
         #if r.z * self.R <= 0:  # backlit
             #print "backlit"
             #return None
-        ax, ay, az, _ = a = (ray.endpoints + array((0, 0, self.R, 0))).T
+        ax, ay, az = a = (rays.endpoints + self.offset).T
         t = quadratic(rz ** 2 + rx ** 2 + ry ** 2,
                       2 * az * rz + 2 * ax * rx + 2 * ay * ry,
-                      az ** 2 + ax ** 2 + ay ** 2 - self.R ** 2)
+                      (az ** 2 + ax ** 2 + ay ** 2) - self.R ** 2)
         if t is None:  # no
             # intersection
             print "missed"
@@ -229,24 +236,21 @@ class Sphere(Surface):
         else:
             # Figure out which intersection we should use
             if self.R > 0:
-                if az + max(t) * rz > 0:
-                    p = a + max(t) * r
-                else:
-                    p = a + min(t) * r
+                p = where(az + max(t, axis=0) * rz > 0,
+                          a + max(t, axis=0) * r,
+                          a + min(t, axis=0) * r)
             else:
-                if az + min(t) * rz < 0:
-                    p = a + min(t) * r
-                else:
-                    p = a + max(t) * r
-            # if (self.xsize is None and self.ysize is None) or (
-            #         (-self.xsize / 2 <= p[0] <= self.xsize / 2) and
-            #         (-self.ysize / 2 <= p[1] <= self.ysize / 2)):
-            #     return p - array((0, 0, self.R))
-            #     #return Vec(p.x, p.y, p.z)
-            return p.T
-            # else:
-            #     print "outside"
-            #     return None
+                p = where(az + min(t, axis=0) * rz < 0,
+                          a + min(t, axis=0) * r,
+                          a + max(t, axis=0) * r)
+            px, py, pz = p
+            print "px", px.shape
+            halfxsize = self.xsize / 2
+            halfysize = self.ysize / 2
+            nans = np.empty((3, len(px)))
+            nans[:] = np.NaN
+            q = where((abs(px) <= halfxsize) & (abs(py) <= halfysize), p, nans)
+            return q.T - self.offset
 
     def mesh(self, res=10):
         verts = []

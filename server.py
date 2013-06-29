@@ -24,6 +24,7 @@ def staticpath(filepath):
 
 @get('/schema')
 def get_schema():
+    print "schema"
     pprint(schemas)
     return dict((kind, dict((type, schemas[id(cls)])
                             for type, cls in clss.items()))
@@ -85,18 +86,15 @@ def trace():
     system = data[int(query.system)]
 
     n = int(query.n)  # number of rays to trace
-    result = {}
+    traces = system.trace(n)
+    result = [tr.endpoints for tr in traces]
 
-    for i, source in enumerate(system.sources):
-        traces = []
-        for ray in source.generate(n):
-            tmp = [tuple(r.endpoint) for r in system.propagate(ray, i)]
-            if r.direction is None:
-                pass
-            else:
-                tmp.append(tuple(r.endpoint + r.direction * 1))
-            traces.append(tmp)
-        result[i] = traces
+    # for i, source in enumerate(system.sources):
+    #     traces = []
+    #     rays = source.generate(n)
+    #     tmp = [tuple(tuple(p.enpoints + r.direction)) for p in r
+    #            for r in system.propagate(ray, i)]
+    #     result[i] = traces
 
     dt = time() - t0
     print "traced %d rays, took %f s." % (n, dt)

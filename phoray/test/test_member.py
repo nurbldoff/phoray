@@ -15,7 +15,7 @@ A, B, C, D, E, F = [uniform(-0.5, 0.5) for _ in xrange(6)]
 class MemberTestCase(PhorayTestCase):
 
     def test_localize_vector_position(self):
-        v1 = array([(A, B, C, 1)])
+        v1 = array([(A, B, C)])
         dv = position(D, E, F)
         member = Member(position=dv)
         v2 = member.localize_vector(v1)

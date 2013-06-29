@@ -341,8 +341,9 @@
                       function (data) {
                           console.log("Trace took", data.time, "s");
                           view.clear_traces();
-                          view.draw_traces(data.traces, self.selected_system().args.sources().map(
-                              function(src) {return src.args.color();}));
+                          view.draw_traces(data.traces,
+                                           self.selected_system().args.sources().map(
+                                               function(src) {return src.args.color();}));
                           tracing = false;
                           if (trace_queued) {
                               trace_queued = false;

@@ -4,12 +4,17 @@ from numpy import array
 
 class Rays(object):
 
-    def __init__(self, endpoints, directions):
+    def __init__(self, endpoints, directions, wavelengths):
         self.endpoints = endpoints
         self.directions = directions
+        self.wavelengths = wavelengths
 
     def __repr__(self):
-        return "%r, %r" % (self.endpoints, self.directions)
+        return "%r, %r, %r" % (
+            self.endpoints, self.directions, self.wavelengths)
+
+    def __len__(self):
+        return len(self.endpoints)
 
 
 class Ray(object):

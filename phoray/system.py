@@ -2,6 +2,8 @@
 from itertools import count
 from math import *
 
+import numpy as np
+
 from member import Member
 from ray import Ray
 
@@ -44,7 +46,7 @@ class OpticalSystem(Member):
         """
         pass
 
-    def propagate(self, ray, system):
+    def propagate(self, rays, system):
 
         """The given ray is traced from a source through each element, until it
         misses one or none are left. It is up to each element how to
@@ -55,14 +57,10 @@ class OpticalSystem(Member):
         direction.
         """
 
-        trace = [ray]
+        trace = [rays]
         for el in self.elements:
-            if ray.direction is None:
-                break
-            ray = el.propagate(ray, system)
-            if ray is None:
-                break
-            trace.append(ray)
+            rays = el.propagate(rays, system)
+            trace.append(rays)
         return trace
 
     def trace(self, n=1):
@@ -71,10 +69,12 @@ class OpticalSystem(Member):
         for element in self.elements:
             element.footprint.clear()
 
+        results = []
         for i, source in enumerate(self.sources):
-            for ray in source.generate(n):
-                trace = self.propagate(ray, i)
-                yield i, trace
+            rays = source.generate(n)
+            trace = self.propagate(rays, i)
+            results.append(trace)
+        return results
 
     def axis(self, source=0):
         if self.sources:

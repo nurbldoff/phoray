@@ -1,22 +1,17 @@
 from random import seed, randint, gauss
 from collections import OrderedDict
 
-from numpy import array, dot
+from numpy import array, dot, ones, zeros, random
 from transformations import euler_matrix
 
 from member import Member
-from ray import Ray
-
-
-
-base_schema = OrderedDict([("wavelength", {"type": "length"}),
-                           ("position", {"type": "position"}),
-                           ("rotation", {"type": "rotation"}),
-                           ("offset", {"type": "position"}),
-                           ("alignment", {"type": "rotation"})])
+from ray import Rays
+from . import Rotation, Position
 
 
 class Source(Member):
+
+    "Source base class"
 
     def __init__(self,
                  wavelength=0.0, color="#ffffff", *args, **kwargs):
@@ -37,26 +32,23 @@ class TrivialSource(Source):
 
     """A very simple pointsource that sends out rays in one direction."""
 
-    # schema = base_schema
-
     def generate(self, n=1):
-        for i in xrange(n):
-            yield self.globalize(Ray(direction=self.axis,
-                                     wavelength=self.wavelength))
+        endpoints = zeros((n, 3))
+        directions = ones((n, 3)) * self.axis
+        rays = Rays(endpoints, directions)
+        return self.globalize(rays)
 
 
 class GaussianSource(Source):
 
     """A source that sends out rays according to a Gaussian distribution,
     in both origin and direction.
+
+    FIXME: the divergence is only correct for small angles.
     """
 
-    # schema = OrderedDict([("size", {"type": "position"}),
-    #                       ("divergence", {"type": "rotation"})] +
-    #                      base_schema.items())
-
-    def __init__(self, size=array((0, 0, 0)),
-                 divergence=array((0, 0, 0)),
+    def __init__(self, size=Position(0, 0, 0),
+                 divergence=Position(0, 0, 0),
                  random_seed=randint(0, 1000000),
                  *args, **kwargs):
         self.size = size
@@ -69,15 +61,17 @@ class GaussianSource(Source):
     def generate(self, n=1):
 
         sx, sy, sz = self.size
+        s = array((zeros((n)) if sx == 0 else random.normal(0, sx, n),
+                   zeros((n)) if sy == 0 else random.normal(0, sy, n),
+                   zeros((n)) if sz == 0 else random.normal(0, sz, n))).T
+
         dx, dy, dz = self.divergence
+        d = array((zeros((n)) if dx == 0 else random.normal(0, dx, n),
+                   zeros((n)) if dy == 0 else random.normal(0, dy, n),
+                   zeros((n,)))).T + self.axis
 
-        for i in xrange(n):
-            local_position = array((gauss(0, sx), gauss(0, sy), gauss(0, sz)))
-            local_rotation = array((gauss(0, dy), gauss(0, dx), gauss(0, dz)))
-            #rotation = Mat().rotate(local_rotation)
-            rot = euler_matrix(*local_rotation)
+        rays = self.globalize(Rays(endpoints=s, directions=d,
+                                   wavelengths=ones((n,)) * self.wavelength))
+        print "Ray 0", rays.endpoints[0], rays.directions[0]
 
-            yield self.globalize(
-                Ray(origin=local_position,
-                    direction=dot(self.axis, rot[:3, :3].T),
-                    wavelength=self.wavelength))
+        return rays

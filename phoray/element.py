@@ -4,7 +4,7 @@ from collections import defaultdict
 
 from member import Member
 from surface import Surface
-from ray import Ray
+from ray import Rays
 
 
 class Element(Member):
@@ -14,34 +14,28 @@ class Element(Member):
         Member.__init__(self, *args, **kwargs)
         self.footprint = defaultdict(list)
 
-    def propagate(self, ray, source=0):
+    def propagate(self, rays, source=0):
         """
         Takes a ray in global coordinates and returns the ray that
         results from interacting with the surface (e.g. reflection)
         """
-        new_ray = self._propagate(ray)
-        if new_ray is not None:
-            self.footprint[source].append((new_ray.endpoint[0],
-                                           new_ray.endpoint[1],
-                                           new_ray.wavelength))
-        return new_ray
+        new_rays = self._propagate(rays)
+        # if new_ray is not None:
+        #     self.footprint[source].append((new_ray.endpoint[0],
+        #                                    new_ray.endpoint[1],
+        #                                    new_ray.wavelength))
+        return new_rays
 
 
 class Mirror(Element):
 
     """A mirror reflects incoming rays in its surface."""
 
-    def _propagate(self, ray):
+    def _propagate(self, rays):
 
-        if ray is not None:
-            ray0 = self.localize(ray)
-            reflected_ray = self.geometry.reflect(ray0)
-            if reflected_ray is None:
-                return None
-            else:
-                return self.globalize(reflected_ray)
-        else:
-            return None
+        rays0 = self.localize(rays)
+        reflected_rays = self.geometry.reflect(rays0)
+        return self.globalize(reflected_rays)
 
 
 class Detector(Element):

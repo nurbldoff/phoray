@@ -1,4 +1,4 @@
-from minivec import Vec
+from numpy import array
 
 DEBUG = True
 
@@ -8,12 +8,16 @@ def debug(*args):
         print(args)
 
 
-class Position(Vec):
-    pass
+def Vec(x, y, z):
+    return array((x, y, z))
 
 
-class Rotation(Vec):
-    pass
+def Position(x, y, z):
+    return array((x, y, z))
+
+
+def Rotation(x, y, z):
+    return array((x, y, z))
 
 
 class Length(float):

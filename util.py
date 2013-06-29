@@ -2,6 +2,8 @@ from collections import OrderedDict
 import inspect
 from pprint import pprint
 
+import numpy as np
+
 from phoray import surface, element, source
 from phoray.minivec import Vec
 from phoray import Length, Position, Rotation
@@ -83,6 +85,8 @@ def convert_attr(attr, schemas):
         return object_to_dict(attr, schemas)
     elif isinstance(attr, list):
         return [object_to_dict(item, schemas) for item in attr]
+    elif isinstance(attr, np.ndarray):
+        return dict(x=float(attr[0]), y=float(attr[1]), z=float(attr[2]))
     else:
         return attr
 
@@ -112,6 +116,9 @@ def signature(cls):
                 if argtype in (Vec, Position):
                     argtype = "position"
                     value = value.dict()
+                elif argtype == np.ndarray:
+                    argtype = "position"
+                    value = dict(x=float(value[0]), y=float(value[1]), z=float(value[2]))
                 elif argtype == surface.Surface:
                     argtype = "geometry"
                     value = None
