@@ -55,7 +55,7 @@ class Surface(object):
         #rot = rotation_matrix(pi/2, a)
         #d = dot(normal, rot[:3, :3].T)
         # TODO: normalize?
-        return b
+        return (b.T / vector_norm(b, axis=1)).T
 
     def reflect(self, rays):
         """
@@ -77,6 +77,8 @@ class Surface(object):
 
         """
         Diffract the given ray in the surface, returning the diffracted ray.
+
+        TODO: it's definitely possible to simplify this.
         """
 
         P = self.intersect(rays)
@@ -95,17 +97,16 @@ class Surface(object):
             n = self.normal(P)
             r_ref = refl.directions
             g = self.grating_direction(P)
-            #g /= vector_norm(g)
             a = cross(g, n)
 
-            alpha = angle_between_vectors(r_ref, g, axis=1)
+            alpha = angle_between_vectors(g, r_ref, axis=1)
             x = cos(alpha)
             y = sin(alpha)
 
-            phi = arccos((r_ref * g).sum(axis=1))  # dot product
-            theta = arccos((r_ref * n).sum(axis=1) / sin(phi))
-            theta_m = arcsin(-order * rays.wavelengths /
-                              (d * sin(phi)) - sin(theta))
+            phi = arccos((g * r_ref).sum(axis=1))  # dot product
+            theta = arccos((n * r_ref).sum(axis=1) / sin(phi))
+            theta_m = arcsin(order * rays.wavelengths /
+                             (d * sin(phi)) + sin(theta))
             r_diff = g.T * x + a.T * y * sin(theta_m) + n.T * y * cos(theta_m)
             return Rays(P, r_diff.T, rays.wavelengths)
 
