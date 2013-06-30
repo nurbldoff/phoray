@@ -41,6 +41,8 @@ schemas = dict((id(cls), util.signature(cls))
 
 def create_system(spec={}):
     """Create a System instance from specifications."""
+    print "create_system"
+    pprint(dict(spec))
     cls = classes["System"][spec.get("type", "Free")]
     args = spec.get("args", {})
     args["elements"] = [create_element(elspec)

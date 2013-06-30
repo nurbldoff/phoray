@@ -66,6 +66,8 @@ class OpticalSystem(Member):
     def trace(self, n=1):
         """Generate some rays and propagate them through the system."""
 
+        print "trace, n %d" % n
+
         for element in self.elements:
             element.footprint.clear()
 

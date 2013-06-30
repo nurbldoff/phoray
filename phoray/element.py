@@ -2,6 +2,8 @@ from __future__ import division
 from math import *
 from collections import defaultdict
 
+from numpy import array
+
 from member import Member
 from surface import Surface
 from ray import Rays
@@ -20,10 +22,9 @@ class Element(Member):
         results from interacting with the surface (e.g. reflection)
         """
         new_rays = self._propagate(rays)
-        # if new_ray is not None:
-        #     self.footprint[source].append((new_ray.endpoint[0],
-        #                                    new_ray.endpoint[1],
-        #                                    new_ray.wavelength))
+        self.footprint[source] = array((new_rays.endpoints.T[0],
+                                        new_rays.endpoints.T[1],
+                                        new_rays.wavelengths)).T
         return new_rays
 
 
@@ -44,14 +45,11 @@ class Detector(Element):
     be the final element in a system.
     """
 
-    def _propagate(self, ray):
-        ray0 = self.localize(ray)
-        p = self.geometry.intersect(ray0)
-        if p is not None:
-            pos = self.globalize_vector(p)
-            return Ray(pos, None, ray.wavelength)
-        else:
-            return None
+    def _propagate(self, rays):
+        rays0 = self.localize(rays)
+        p = self.geometry.intersect(rays0)
+        pos = self.globalize_vector(p)
+        return Rays(pos, None, rays.wavelengths)
 
 
 class Screen(Element):

@@ -157,11 +157,14 @@ var view3d = (function () {
     };
 
     this.View.prototype.draw_traces = function (data, colors) {
+        console.log("draw_trace", data, colors);
         for (var system in data) {
             var tmpdata = data[system];
             tmpdata.forEach( function (trace) {
                 var geometry = new THREE.Geometry();
                 for ( var i=0; i<trace.length; i++ ) {
+                    if (trace[i][0] === NaN)
+                        break;
                     var position = new THREE.Vector3(
                         trace[i][0], trace[i][1], trace[i][2]);
                     geometry.vertices.push(position);

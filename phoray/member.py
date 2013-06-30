@@ -24,14 +24,12 @@ class Member(object):
         else:
             self._id = _id
 
-        if isinstance(position, dict):
-            self.position = Position(**position)
-        else:
-            self.position = Position(*position)
-        self.rotation = Position(*rotation)
+        print "rotation", rotation
+        self.position = Position(position)
+        self.rotation = Position(rotation)
 
-        self.offset = Position(*offset)
-        self.alignment = Position(*alignment)
+        self.offset = Position(offset)
+        self.alignment = Position(alignment)
 
         # Precalculate some matrices. Note that this means that the
         # member can't be moved after creation, unless precalc is
@@ -54,10 +52,12 @@ class Member(object):
 
     def precalc(self):
         print self.rotation
-        self._rotate = euler_matrix(self.rotation[0], self.rotation[1],
-                                    self.rotation[2], axes="rxyz")
-        self._align = euler_matrix(self.alignment[0], self.alignment[1],
-                                   self.alignment[2], axes="rxyz")
+        self._rotate = euler_matrix(radians(self.rotation[0]),
+                                    radians(self.rotation[1]),
+                                    radians(self.rotation[2]), axes="rxyz")
+        self._align = euler_matrix(radians(self.alignment[0]),
+                                   radians(self.alignment[1]),
+                                   radians(self.alignment[2]), axes="rxyz")
 
         self._matloc = concatenate_matrices(invert_matrix(self._align),
                                             translation_matrix(-self.offset),

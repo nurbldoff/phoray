@@ -31,8 +31,8 @@ d = 1200e3       # grating line density, lines/m
 # Grating, centered at origin
 s = Sphere(5.0, xsize=0.1, ysize=0.1)
 sg = ReflectiveGrating(d=1/d, order=order, geometry=s,
-                       rotation=array((radians(90), 0, 0)))
-#sg = Mirror(geometry=s, rotation=array((radians(90), 0, 0)))
+                       rotation=(90, 0, 0))
+sg = Mirror(geometry=s, rotation=(90, 0, 0))
 
 # Detector
 p = Plane(xsize=0.1, ysize=0.1)
@@ -42,35 +42,37 @@ row = Rowland(R_gr=R,
 detx, dety = row.add_ray(energy, order, 0)   # calculate the focal
 print "source pos:", row.source_x, row.source_y
 print "detector pos:", detx, dety
-det = Detector(geometry=p, position=array((0, dety, detx)),
-               rotation=array((radians(90-degrees(2*atan(dety/detx))), 0., 0.)))
+det = Mirror(geometry=p, position=(0, dety, detx),
+             rotation=(90-degrees(2*atan(dety/detx), 0., 0.)))
 
 
 # Incoming light distribution
 dE = 1.0        # energy difference between lines
-xdisp = 0     # divergence angle in horizontal direction (sigma)
-ydisp = 0     # vertical divergence
+xdisp = 10e-3     # divergence angle in horizontal direction (sigma)
+ydisp = 1e-3     # vertical divergence
 xslit = 0      # horizontal entrance slit / source size (sigma)
 yslit = 0      # vertical size
 
-srcs = [GaussianSource(position=array((0, row.source_y, row.source_x)),
-                       rotation=array((radians(angle), 0, 0)),
-                       size=array((xslit, yslit, 0)),
-                       divergence=array((xdisp, ydisp, 0)),
+srcs = [GaussianSource(position=(0, row.source_y, row.source_x),
+                       rotation=(angle, 0, 0),
+                       size=(xslit, yslit, 0),
+                       divergence=(xdisp, ydisp, 0),
                        wavelength=1.24e-6 / en)
         for en in [energy-dE, energy, energy+dE]]
 
-os = OpticalSystem(elements=[sg], sources=srcs)
+os = OpticalSystem(elements=[sg, det], sources=srcs)
 
 n_rays = 10000   # number of rays
 
 print "mirror pos", sg.position
 print "source", srcs[0].position, srcs[1].rotation
 
-for i, t in os.trace(n_rays):
-    print "end", t.endpoints[0], "dir", t.directions[0]
-
-print "done"
+trace = os.trace(n_rays)
+for t in trace:
+    for u in t:
+        if u is not None:
+            print "end", u.endpoints[0], "dir", u.directions[0]
+    print
 
 with open("rowland.dat", "w") as f:
     w = csv.writer(f, delimiter="\t")

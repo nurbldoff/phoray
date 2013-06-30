@@ -3,6 +3,7 @@ import json
 from pprint import pprint
 from time import time
 
+from numpy import isnan
 from bottle import get, post, request, run, static_file, route
 
 from phoray.meta import (classes, schemas, create_system, create_element,
@@ -87,7 +88,22 @@ def trace():
 
     n = int(query.n)  # number of rays to trace
     traces = system.trace(n)
-    result = [tr.endpoints for tr in traces]
+    # result = [[[tuple(tr.endpoints[a]) for tr in trace]
+    #            for a in xrange(n)]
+    #           for trace in traces]
+
+    result = []
+    for trace in traces:
+        tmp = []
+        for i in xrange(n):
+            tmp2 = []
+            for tr in trace:
+                if isnan(tr.endpoints[i][0]):
+                    break
+                else:
+                    tmp2.append(tuple(tr.endpoints[i]))
+            tmp.append(tmp2)
+        result.append(tmp)
 
     # for i, source in enumerate(system.sources):
     #     traces = []
@@ -98,6 +114,7 @@ def trace():
 
     dt = time() - t0
     print "traced %d rays, took %f s." % (n, dt)
+    #print result[0][0][0], result[0][0][1]
     return dict(traces=result, time=dt)
 
 

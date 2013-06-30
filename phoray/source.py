@@ -51,24 +51,24 @@ class GaussianSource(Source):
                  divergence=Position(0, 0, 0),
                  random_seed=randint(0, 1000000),
                  *args, **kwargs):
-        self.size = size
-        self.divergence = divergence
+        self.size = Position(size)
+        self.divergence = Position(divergence)
         self.random_seed = random_seed
-        seed(random_seed)
+        random.seed(random_seed)
 
         Source.__init__(self, *args, **kwargs)
 
     def generate(self, n=1):
 
         sx, sy, sz = self.size
-        s = array((zeros((n)) if sx == 0 else random.normal(0, sx, n),
-                   zeros((n)) if sy == 0 else random.normal(0, sy, n),
-                   zeros((n)) if sz == 0 else random.normal(0, sz, n))).T
+        s = array((zeros(n) if sx == 0 else random.normal(0, sx, n),
+                   zeros(n) if sy == 0 else random.normal(0, sy, n),
+                   zeros(n) if sz == 0 else random.normal(0, sz, n))).T
 
         dx, dy, dz = self.divergence
-        d = array((zeros((n)) if dx == 0 else random.normal(0, dx, n),
-                   zeros((n)) if dy == 0 else random.normal(0, dy, n),
-                   zeros((n,)))).T + self.axis
+        d = array((zeros(n) if dx == 0 else random.normal(0, dx, n),
+                   zeros(n) if dy == 0 else random.normal(0, dy, n),
+                   zeros(n))).T + self.axis
 
         rays = self.globalize(Rays(endpoints=s, directions=d,
                                    wavelengths=ones((n,)) * self.wavelength))

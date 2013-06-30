@@ -4,13 +4,14 @@ from __future__ import division
 from math import *
 
 import numpy as np
-from numpy import (array, dot, cross, max, min, where, arccos, arcsin, sin,
-                   abs)
+from numpy import (array, dot, cross, max, min, abs, where,
+                   cos, sin, arccos, arcsin)
 from numpy.linalg import norm
 
 #from numba import autojit
 
-from transformations import rotation_matrix
+from transformations import (rotation_matrix, angle_between_vectors,
+                             vector_norm)
 from ray import Ray, Rays
 from solver import quadratic
 from . import Length
@@ -49,11 +50,12 @@ class Surface(object):
         """
         normal = self.normal(ps)
         xaxis = array((1, 0, 0))
-        a = cross(normal, xaxis)
-        rot = rotation_matrix(pi/2, a)
-        d = dot(normal, rot[:3, :3].T)
+        a = cross(xaxis, normal)
+        b = cross(normal, a)
+        #rot = rotation_matrix(pi/2, a)
+        #d = dot(normal, rot[:3, :3].T)
         # TODO: normalize?
-        return d
+        return b
 
     def reflect(self, rays):
         """
@@ -93,22 +95,19 @@ class Surface(object):
             n = self.normal(P)
             r_ref = refl.directions
             g = self.grating_direction(P)
+            #g /= vector_norm(g)
+            a = cross(g, n)
 
-            # TODO: seems like there should be a simpler way to do
-            # this. But remember that the direction of the grating
-            # must be taken into account!
+            alpha = angle_between_vectors(r_ref, g, axis=1)
+            x = cos(alpha)
+            y = sin(alpha)
+
             phi = arccos((r_ref * g).sum(axis=1))  # dot product
             theta = arccos((r_ref * n).sum(axis=1) / sin(phi))
-            #print "phi", phi, "theta", theta
-            try:
-                theta_m = arcsin(-order * ray.wavelength /
-                                  (d * sin(phi)) - sin(theta))
-            except Exception as e:
-                #print "Discarding ray:", str(e)
-                return None
-            #rotation = Mat.RotateAxis(-degrees(theta + theta_m), g)
-            r_diff = dot(r_ref, rotation_matrix(theta + theta_m, g)[:3, :3].T)
-            return Ray(P, r_diff, ray.wavelength)
+            theta_m = arcsin(-order * rays.wavelengths /
+                              (d * sin(phi)) - sin(theta))
+            r_diff = g.T * x + a.T * y * sin(theta_m) + n.T * y * cos(theta_m)
+            return Rays(P, r_diff.T, rays.wavelengths)
 
     def refract(self, ray, i1, i2):
         """

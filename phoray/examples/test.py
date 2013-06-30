@@ -32,7 +32,7 @@ d = 1200e3       # grating line density, lines/m
 s = Sphere(R=4, xsize=0.1, ysize=0.1)
 # sg = ReflectiveGrating(d=1/d, order=order, geometry=s,
 #                        rotation=array((90, 0, 0)))
-sg = Mirror(geometry=s, rotation=array((radians(180), 0, 0)))
+sg = Mirror(geometry=s, rotation=array((90, 0, 0)))
 
 # Detector
 p = Plane(xsize=0.1, ysize=0.1)
@@ -43,8 +43,7 @@ detx, dety = row.add_ray(energy, order, 0)   # calculate the focal
 print "source pos:", row.source_x, row.source_y
 print "detector pos:", detx, dety
 det = Detector(geometry=p, position=array((0, dety, detx)),
-               rotation=array((radians(90-degrees(2*atan(dety/detx))), 0., 0.)))
-
+               rotation=array((90-degrees(2*atan(dety/detx)), 0., 0.)))
 
 # Incoming light distribution
 dE = 1.0        # energy difference between lines
@@ -60,15 +59,14 @@ srcs = [GaussianSource(position=array((0, 0, -1.5)),
                        wavelength=1.24e-6 / en)
         for en in [energy-dE, energy, energy+dE]]
 
-os = OpticalSystem(elements=[sg], sources=srcs)
+os = OpticalSystem(elements=[sg, det], sources=srcs)
 
-n_rays = 10000   # number of rays
+n_rays = 1000000   # number of rays
 
 print "mirror pos", sg.position
 print "source", srcs[0].position, srcs[1].rotation
 
-for i, t in os.trace(n_rays):
-    print "end", t.endpoints[0], "dir", t.directions[0]
+res = os.trace(n_rays)
 
 print "done"
 
