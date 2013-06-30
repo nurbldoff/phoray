@@ -22,7 +22,7 @@ class PlaneSurfaceTestCase(PhorayTestCase):
         self.assertTrue(allclose(intersection, array([(A, B, 0)])))
 
     def test_intersect_miss(self):
-        "Check that intersecting outside the limits returns NaNs"
+        "Check that intersecting outside the edges returns NaNs"
         plane = Plane(xsize=0.1)
         rays = Rays(array([(A + 1, B, -1)]), array([(0, 0, 1)]), None)
         intersection = plane.intersect(rays)
@@ -54,23 +54,24 @@ class SphereSurfaceTestCase(PhorayTestCase):
                                  [(0, 0, -1)]))
 
 
-# class CylinderSurfaceTestCase(PhorayTestCase):
+class CylinderSurfaceTestCase(PhorayTestCase):
 
-#     def test_reflect(self):
-#         surf = Cylinder(1)
-#         ray = Ray(array((0, 0, -1)), array((A, B, 1)) / sqrt(A**2 + B**2 + 1))
-#         reflection = surf.reflect(ray)
-#         self.assertTrue(allclose(reflection.direction[0], ray.direction[0]))
-#         self.assertTrue(allclose(reflection.direction[1], -ray.direction[1]))
-#         self.assertTrue(allclose(reflection.direction[2], -ray.direction[2]))
+    def test_reflect(self):
+        surf = Cylinder(1)
+        ray = Rays(array([(0, 0, -1)]),
+                   array([(A, B, 1)]) / sqrt(A**2 + B**2 + 1), None)
+        reflection = surf.reflect(ray).directions[0]
+        self.assertTrue(allclose(reflection[0], ray.directions[0][0]))
+        self.assertTrue(allclose(reflection[1], -ray.directions[0][1]))
+        self.assertTrue(allclose(reflection[2], -ray.directions[0][2]))
 
 
-# class ParaboloidSurfaceTestCase(PhorayTestCase):
+class ParaboloidSurfaceTestCase(PhorayTestCase):
 
-#     def test_reflect(self):
-#         surf = Paraboloid(1, 1, -1)
-#         ray = Ray(array((0, 0, -0.25)), array((A, B, 1)))
-#         reflection = surf.reflect(ray)
-#         print reflection
-#         self.assertAlmostEquals(reflection.direction[0], 0)
-#         self.assertAlmostEquals(reflection.direction[1], 0)
+    def test_reflect(self):
+        surf = Paraboloid(1, 1, -1)
+        ray = Rays(array([(0, 0, -0.25)]), array([(A, B, 1)]), None)
+        reflection = surf.reflect(ray)
+        print "refl", reflection
+        self.assertAlmostEquals(reflection.directions[0][0], 0)
+        self.assertAlmostEquals(reflection.directions[0][1], 0)

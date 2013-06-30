@@ -4,7 +4,7 @@ from __future__ import division
 from math import *
 
 import numpy as np
-from numpy import (array, dot, cross, max, min, abs, where,
+from numpy import (array, dot, cross, max, min, abs, where, sqrt,
                    cos, sin, arccos, arcsin)
 from numpy.linalg import norm
 
@@ -118,7 +118,6 @@ class Surface(object):
         FIXME: Check that this is correct.
         """
         P = self.intersect(ray)
-        #print P
         if P is not None:
             r = ray.direction
             n = self.normal(P)
@@ -229,28 +228,24 @@ class Sphere(Surface):
         t = quadratic(rz ** 2 + rx ** 2 + ry ** 2,
                       2 * az * rz + 2 * ax * rx + 2 * ay * ry,
                       (az ** 2 + ax ** 2 + ay ** 2) - self.R ** 2)
-        if t is None:  # no
-            # intersection
-            print "missed"
-            return None
+
+        # Figure out which intersection we should use
+        if self.R > 0:
+            p = where(az + max(t, axis=0) * rz > 0,
+                      a + max(t, axis=0) * r,
+                      a + min(t, axis=0) * r)
         else:
-            # Figure out which intersection we should use
-            if self.R > 0:
-                p = where(az + max(t, axis=0) * rz > 0,
-                          a + max(t, axis=0) * r,
-                          a + min(t, axis=0) * r)
-            else:
-                p = where(az + min(t, axis=0) * rz < 0,
-                          a + min(t, axis=0) * r,
-                          a + max(t, axis=0) * r)
-            px, py, pz = p
-            print "px", px.shape
-            halfxsize = self.xsize / 2
-            halfysize = self.ysize / 2
-            nans = np.empty((3, len(px)))
-            nans[:] = np.NaN
-            q = where((abs(px) <= halfxsize) & (abs(py) <= halfysize), p, nans)
-            return q.T - self.offset
+            p = where(az + min(t, axis=0) * rz < 0,
+                      a + min(t, axis=0) * r,
+                      a + max(t, axis=0) * r)
+        px, py, pz = p
+        print "px", px.shape
+        halfxsize = self.xsize / 2
+        halfysize = self.ysize / 2
+        nans = np.empty((3, len(px)))
+        nans[:] = np.NaN
+        q = where((abs(px) <= halfxsize) & (abs(py) <= halfysize), p, nans)
+        return q.T - self.offset
 
     def mesh(self, res=10):
         verts = []
@@ -275,45 +270,47 @@ class Cylinder(Surface):
 
     def __init__(self, R=Length(1.0), *args, **kwargs):
         self.R = R
+        self.offset = array((0, 0, self.R))
         if "ysize" in kwargs:
             kwargs["ysize"] = min(kwargs["ysize"], abs(R * 1.5))
         Surface.__init__(self, *args, **kwargs)
 
     def normal(self, p):
-        return array((0, -p[1], -p[2] - self.R)) / self.R
+        r = -(p + self.offset) / self.R
+        r[:, 0] = 0
+        return r
 
     def intersect(self, ray):
-        rx, ry, rz = r = ray.direction
+        rx, ry, rz = r = ray.directions.T
 
-        if rz * self.R <= 0:  # backlit
-            return None
+        # if rz * self.R <= 0:  # backlit
+        #     return None
 
-        ax, ay, az = a = ray.endpoint + array((0, 0, self.R))
-        bx, by, bz = a + r
+        ax, ay, az = a = (ray.endpoints + self.offset).T
 
-        t = quadratic((bz - az) ** 2 + (by - ay) ** 2,
-                      2 * az * (bz - az) + 2 * ay * (by - ay),
+        t = quadratic(rz ** 2 + ry ** 2,
+                      2 * az * rz + 2 * ay * ry,
                       az ** 2 + ay ** 2 - self.R ** 2)
 
-        if t is None:  # no intersection
-            return None
+        # if t is None:  # no intersection
+        #     return None
+        # else:
+        if self.R > 0:
+            p = where(az + max(t, axis=0) * rz > 0,
+                      a + max(t, axis=0) * r,
+                      a + min(t, axis=0) * r)
         else:
-            if self.R > 0:
-                if az + max(t) * rz > 0:
-                    p = a + max(t) * r
-                else:
-                    p = a + min(t) * r
-            else:
-                if az + min(t) * rz < 0:
-                    p = a + min(t) * r
-                else:
-                    p = a + max(t) * r
-            if (self.xsize is None and self.ysize is None) or (
-                    -self.xsize / 2 <= p[0] <= self.xsize / 2 and
-                    -self.ysize / 2 <= p[1] <= self.ysize / 2):
-                return p - array((0, 0, self.R))
-            else:
-                return None
+            p = where(az + min(t, axis=0) * rz < 0,
+                      a + min(t, axis=0) * r,
+                      a + max(t, axis=0) * r)
+        px, py, pz = p
+
+        halfxsize = self.xsize / 2
+        halfysize = self.ysize / 2
+        nans = np.empty((3, len(px)))
+        nans[:] = np.NaN
+        q = where((abs(px) <= halfxsize) & (abs(py) <= halfysize), p, nans)
+        return q.T - self.offset
 
     def mesh(self, res=10):
         verts = []
@@ -424,31 +421,29 @@ class Paraboloid(Surface):
         self.concave = a * b * c < 0
 
     def normal(self, p):
-        px, py, pz = p
+        px, py, pz = p.T
         f = sqrt((self.d * px) ** 2 + (self.e * py) ** 2 + 1)
-        return array((self.d * px / f, self.e * py / f, 1 / f))
+        return array((self.d * px / f, self.e * py / f, 1 / f)).T
 
-    def intersect(self, ray):
-        rx, ry, rz = r = ray.direction
-        px, py, pz = p = ray.endpoint
+    def intersect(self, rays):
+        rx, ry, rz = r = rays.directions.T
+        px, py, pz = p = rays.endpoints.T
         a2, b2, c = self.a ** 2, self.b ** 2, self.c
-        xsize, ysize = self.xsize, self.ysize
         t = quadratic(rx ** 2 / a2 + ry ** 2 / b2,
                       2 * px * rx / a2 + 2 * py * ry / b2 - rz / c,
                       px ** 2 / a2 + py ** 2 / b2 - pz / c)
-        if t is None:  # no intersection
-            return None
+        if self.concave:
+            p += max(t, axis=0) * r
         else:
-            if self.concave:
-                ip = p + max(t) * r
-            else:
-                ip = p + min(t) * r
-            if ((xsize is None and ysize is None)
-                or (-xsize / 2 <= ip[0] <= xsize / 2
-                    and -ysize / 2 <= ip[1] <= ysize / 2)):
-                return ip
-            else:
-                return None
+            p += min(t, axis=0) * r
+        px, py, pz = p
+        halfxsize = self.xsize / 2
+        halfysize = self.ysize / 2
+        nans = np.empty((3, len(px)))
+        nans[:] = np.NaN
+        q = where((abs(px) <= halfxsize) & (abs(py) <= halfysize), p, nans)
+
+        return q.T
 
     def mesh(self, res=10):
         verts = []
