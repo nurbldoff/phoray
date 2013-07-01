@@ -106,6 +106,5 @@ var updown = function (evt) {
         // }
         $target.val(res.value);
         setCaretPosition($target.get(0), res.position);
-        $target.change();
     }
 };

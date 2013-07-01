@@ -213,25 +213,27 @@
 
   <script type="text/html" id="property-number">
     <div class="grid-6 label" data-bind="text: name"> </div>
-    <input class="grid-6" data-bind="value: value.forceNumeric()"/>
+    <input class="grid-6" data-bind="value: value.forceNumeric(),
+                                     valueUpdate: 'afterkeydown'"/>
   </script>
 
   <script type="text/html" id="property-integer">
     <div class="grid-6 label" data-bind="text: name"> </div>
     <input class="grid-6" type="number" data-bind="value: value.forceInteger(),
-                                                   valueUpdate: 'keyup'"/>
+                                                   valueUpdate: 'afterkeydown'">
   </script>
 
   <script type="text/html" id="property-length">
     <div class="grid-6 label" data-bind="text: name"> </div>
     <input class="grid-6" type="number" data-bind="value: value.forceNonZero(),
-                                                   valueUpdate: 'keyup'"/>
+                                                   valueUpdate: 'afterkeydown'">
+
   </script>
 
   <script type="text/html" id="property-angle">
       <div class="grid-6 label" data-bind="text: name"> </div>
       <input class="grid-6" type="number" data-bind="value: value.forceNumeric(),
-                                                     valueUpdate: 'keyup'"/>
+                                                     valueUpdate: 'afterkeydown'">
   </script>
 
   <script type="text/html" id="property-position">
@@ -240,15 +242,15 @@
     <div class="attrib">
       <div class="grid-1 to-right"> x: </div>
       <input class="float-value grid-3" type="number"
-             data-bind="value: value.x.forceNumeric(), valueUpdate: 'keyup'"/>
+             data-bind="value: value.x.forceNumeric(), valueUpdate: 'afterkeydown'"/>
 
       <div class="grid-1 to-right"> y: </div>
       <input class="float-value grid-3" type="number"
-             data-bind="value: value.y.forceNumeric(), valueUpdate: 'keyup'"/>
+             data-bind="value: value.y.forceNumeric(), valueUpdate: 'afterkeydown'"/>
 
       <div class="grid-1 to-right"> z: </div>
       <input class="float-value grid-3" type="number"
-             data-bind="value: value.z.forceNumeric(), valueUpdate: 'keyup'"/>
+             data-bind="value: value.z.forceNumeric(), valueUpdate: 'afterkeydown'"/>
 
     </div>
   </script>

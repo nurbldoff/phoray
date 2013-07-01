@@ -322,38 +322,37 @@
             view.draw_traces(data.traces, self.selected_system().args.sources().map(
                 function(src) {return src.args.color();}));
             tracing = false;
-            if (trace_queued) {
-                trace_queued = false;
-                self.trace();
-            }
+            // if (trace_queued) {
+            //     trace_queued = false;
+            //     self.trace();
+            // }
         };
 
         // Ask the server to trace us some rays
         self.trace = function (n) {
             n = n || 1000;
             if (!tracing) {
-                console.log("trace");
                 // No more tracing until we're done with this one. Primitive, but it will
                 // have to do until the server is more asynchronous.
-                //tracing = true;
+                tracing = true;
                 //sock.send({n: n, system: self.systems.indexOf(self.selected_system())});
                 $.get("/trace", {n: n, system: self.systems.indexOf(self.selected_system())},
                       function (data) {
                           console.log("Trace took", data.time, "s");
                           //console.log(data[0][0][1]);
-                          //tracing = false;
+                          tracing = false;
                           view.clear_traces();
                           view.draw_traces(data.traces,
                                            self.selected_system().args.sources().map(
                                                function(src) {return src.args.color();}));
-                          if (trace_queued) {
-                              trace_queued = false;
-                              self.trace();
-                          }
+                          // if (trace_queued) {
+                          //     trace_queued = false;
+                          //     self.trace();
+                          // }
                       });
-            } else {
-                trace_queued = true;
-            }
+            }//  else {
+            //     trace_queued = true;
+            // }
         };
 
         $( "#footprint" ).dialog({ autoOpen: false, width: 300, height: 300 });
@@ -523,7 +522,7 @@
     };
 
     // add up/down arrowkey behavior to numeric inputs
-    //$(document).on("keypress", "input[type=number]", updown);
+    $(document).on("keypress", "input[type=number]", updown);
 
     ko.applyBindings(new MainViewModel());
 })();
