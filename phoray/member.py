@@ -1,8 +1,8 @@
 from __future__ import division
 from math import *
 
-from numpy import array, dot, ones, zeros
-from numpy.linalg import inv as invert_matrix
+from numpy import array, dot, ones, zeros, radians
+from numpy.linalg import inv as inverse_matrix
 from transformations import (euler_matrix, translation_matrix,
                              concatenate_matrices)
 
@@ -52,22 +52,22 @@ class Member(object):
 
     def precalc(self):
         print self.rotation
-        self._rotate = euler_matrix(radians(self.rotation[0]),
-                                    radians(self.rotation[1]),
-                                    radians(self.rotation[2]), axes="rxyz")
-        self._align = euler_matrix(radians(self.alignment[0]),
-                                   radians(self.alignment[1]),
-                                   radians(self.alignment[2]), axes="rxyz")
+        self._rotate = euler_matrix(*radians(self.rotation), axes="rxyz")
+        #self._irotate = euler_matrix(*-radians(self.rotation), axes="rzyx")
 
-        self._matloc = concatenate_matrices(invert_matrix(self._align),
+        self._align = euler_matrix(*radians(self.alignment), axes="rxyz")
+        #self._ialign = euler_matrix(*-radians(self.alignment), axes="rzyx")
+
+        self._matloc = concatenate_matrices(inverse_matrix(self._align),
                                             translation_matrix(-self.offset),
-                                            invert_matrix(self._rotate),
+                                            inverse_matrix(self._rotate),
                                             translation_matrix(-self.position)
                                             ).T
-        self._matglob = concatenate_matrices(translation_matrix(self.position),
-                                             self._rotate,
-                                             translation_matrix(self.offset),
-                                             self._align).T
+        self._matglob = inverse_matrix(self._matloc)
+        # self._matglob = concatenate_matrices(translation_matrix(self.position),
+        #                                      self._rotate,
+        #                                      translation_matrix(self.offset),
+        #                                      self._align).T
 
     def localize_vector(self, v):
         tmp = ones((len(v), 4))  # make 4-vectors for translations
@@ -88,14 +88,11 @@ class Member(object):
                     rays.wavelengths)
 
     def globalize_vector(self, v):
-        #return ((v.transform(self._align) + self.offset).transform(
-        #        self._rotate) + self.position)
         tmp = ones((len(v), 4))  # make 4-vectors for translations
         tmp[:, :3] = v
         return dot(tmp, self._matglob)[:, :3]
 
     def globalize_direction(self, v):
-        #return v.transformDir(self._align).transformDir(self._rotate)
         tmp = zeros((len(v), 4))  # make 4-vectors for translations
         tmp[:, :3] = v
         return dot(tmp, self._matglob)[:, :3]

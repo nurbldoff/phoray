@@ -270,9 +270,9 @@ class Cylinder(Surface):
 
     def __init__(self, R=Length(1.0), *args, **kwargs):
         self.R = R
-        self.offset = array((0, 0, self.R))
+        self.offset = array((0, 0, R))
         if "ysize" in kwargs:
-            kwargs["ysize"] = min(kwargs["ysize"], abs(R * 1.5))
+            kwargs["ysize"] = min((kwargs["ysize"], abs(R * 1.5)))
         Surface.__init__(self, *args, **kwargs)
 
     def normal(self, p):
