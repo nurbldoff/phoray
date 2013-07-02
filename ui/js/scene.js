@@ -43,6 +43,8 @@ var view3d = (function () {
 
     function setup_input(view, element) {
 
+        element.on
+
         element.onmousedown = function (event) {
             event.preventDefault();
 
@@ -256,7 +258,8 @@ var view3d = (function () {
             geom.vertices.push(new THREE.Vector3(verts[x][0], verts[x][1], verts[x][2]));
         for(x = res*(res-1); x >= 0; x-=res)
             geom.vertices.push(new THREE.Vector3(verts[x][0], verts[x][1], verts[x][2]));
-        var outline = new THREE.Line(geom, new THREE.LineBasicMaterial({color: 0xFFFFFF}),
+        var outline = new THREE.Line(geom, new THREE.LineBasicMaterial({color: 0xFFFFFF,
+                                                                       linewidth: 2}),
                                      THREE.LineStrip);
         return outline;
     };
@@ -353,11 +356,12 @@ var view3d = (function () {
         mesh.position.set(pos.x, pos.y, pos.z);
         mesh.rotation.set(rot.x, rot.y, rot.z);
 
+        this.view.overlay.remove(this.outline);
         if (this.outline && this.outline.children[0]) {
-            this.view.overlay.remove(this.outline);
             var visible = this.outline.children[0].visible;
         }
         var outline_line = make_outline(meshdata.verts);
+        this.outline = new THREE.Object3D();
         this.outline.add(outline_line);
         outline_line.position = mesh.position;
         outline_line.rotation = mesh.rotation;
