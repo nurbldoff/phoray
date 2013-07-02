@@ -1,3 +1,8 @@
+try:
+    import numpypy
+except:
+    pass
+
 import copy
 import json
 from pprint import pprint
@@ -88,29 +93,31 @@ def trace():
 
     n = int(query.n)  # number of rays to trace
     traces = system.trace(n)
-    # result = [[[tuple(tr.endpoints[a]) for tr in trace]
-    #            for a in xrange(n)]
-    #           for trace in traces]
 
     result = []
     for trace in traces:
         tmp = []
         for i in xrange(n):
             tmp2 = []
-            for tr in trace:
+            for j, tr in enumerate(trace):
+                broke = False
                 if isnan(tr.endpoints[i][0]):
+                    tmp2.append(tuple(trace[j-1].endpoints[i] +
+                                      trace[j-1].directions[i]))
+                    broke = True
                     break
                 else:
                     tmp2.append(tuple(tr.endpoints[i]))
+            if not broke:
+                tmp2.append(tuple(tr.endpoints[i] + tr.directions[i]))
             tmp.append(tmp2)
         result.append(tmp)
 
-    # for i, source in enumerate(system.sources):
-    #     traces = []
-    #     rays = source.generate(n)
-    #     tmp = [tuple(tuple(p.enpoints + r.direction)) for p in r
-    #            for r in system.propagate(ray, i)]
-    #     result[i] = traces
+    # for trace in traces:
+    #     tmp = [[tuple(tr.endpoints[i]) for tr in trace
+    #             if not isnan(tr.endpoints[i][0])]
+    #            for i in xrange(n)]
+    #     result.append(tmp)
 
     dt = time() - t0
     print "traced %d rays, took %f s." % (n, dt)
