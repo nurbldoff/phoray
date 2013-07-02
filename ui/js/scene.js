@@ -67,8 +67,8 @@ var view3d = (function () {
 	                     y: ( event.clientY / element.offsetHeight ) * 2 + 1};
                 view.render();
             }
-        };
 
+        };
         // helper for mousewheel events
         function hookEvent(element, eventName, callback)
         {
@@ -101,8 +101,7 @@ var view3d = (function () {
 
 
     this.View = function (element) {
-        var self = this;
-        self.traces = null;
+        this.traces = null;
         this.traces = new THREE.Object3D();
 
         if (!Detector.webgl) {
@@ -111,36 +110,38 @@ var view3d = (function () {
 
             // It should be possible to run with the canvas renderer if the webgl
             // backend doesn't work. Needs testing and probably some tweaking, though.
-            //this.renderer = new THREE.CanvasRenderer({antialias: false});
 
         } else {
             this.renderer = new THREE.WebGLRenderer({antialias: true});
+            this.renderer.autoClear = false;
+            //this.renderer = new THREE.CanvasRenderer({antialias: false});
 
             var view_width = element.offsetWidth, view_height = element.offsetHeight;
 
             // Camera coodinates
-            self.theta = -Math.PI / 4;
-            self.start_theta = self.theta,
-            self.phi = Math.PI / 6;
-            self.start_phi = self.phi;
-            self.mouse_start = {x: 0, y: 0};
-            self.mouse_pos= {x: 0, y: 0};
-            self.mouse_down = false;
-            self.scale = 1;
+            this.theta = -Math.PI / 4;
+            this.start_theta = this.theta,
+            this.phi = Math.PI / 6;
+            this.start_phi = this.phi;
+            this.mouse_start = {x: 0, y: 0};
+            this.mouse_pos= {x: 0, y: 0};
+            this.mouse_down = false;
+            this.scale = 1;
 
             element.parentNode.replaceChild(this.renderer.domElement, element);
             element = this.renderer.domElement;
             element.id = "view";
             this.renderer.setSize( view_width, view_height );
 
-            self.scene = new THREE.Scene();
-            self.camera = new THREE.OrthographicAspectCamera(
+            this.scene = new THREE.Scene();
+            this.overlay = new THREE.Scene();
+            this.camera = new THREE.OrthographicAspectCamera(
                 20, view_width / view_height, 0.1, 10000
             );
 
-            setup_lights(self.scene);
-            setup_grid(self.scene);
-            setup_input(self, element);
+            setup_lights(this.scene);
+            setup_grid(this.scene);
+            setup_input(this, element);
         }
     };
 
@@ -148,6 +149,7 @@ var view3d = (function () {
         if (this.traces) {
             this.scene.remove(this.traces);
             this.traces = new THREE.Object3D();
+            this.scene.add(this.traces);
         }
         this.render();
     };
@@ -160,7 +162,7 @@ var view3d = (function () {
         console.log("draw_trace", data, colors);
         for (var system in data) {
             var tmpdata = data[system];
-            tmpdata.forEach( function (trace) {
+            tmpdata.succeeded.forEach( function (trace) {
                 var geometry = new THREE.Geometry();
                 for ( var i=0; i<trace.length; i++ ) {
                     if (trace[i][0] === NaN)
@@ -172,11 +174,27 @@ var view3d = (function () {
                 var line = new THREE.Line(
                     geometry, new THREE.LineBasicMaterial( {
                         color: color_from_string(colors[system]),
-                        opacity: 0.5, linewidth: 0.5} ));
+                        opacity: 0.05, linewidth: 0.5} ));
+                this.traces.add(line);
+            }.bind(this));
+            tmpdata.failed.forEach( function (trace) {
+                var geometry = new THREE.Geometry();
+                for ( var i=0; i<trace.length; i++ ) {
+                    if (trace[i][0] === NaN)
+                        break;
+                    var position = new THREE.Vector3(
+                        trace[i][0], trace[i][1], trace[i][2]);
+                    geometry.vertices.push(position);
+                }
+                var line = new THREE.Line(
+                    geometry, new THREE.LineBasicMaterial( {
+                        color: color_from_string(colors[system]),
+                        dashSize: 0.2,
+                        gapSize: 0.1,
+                        opacity: 0.05, linewidth: 0.25} ), THREE.LineStrip);
                 this.traces.add(line);
             }.bind(this));
         }
-        this.scene.add(this.traces);
         this.render();
     };
 
@@ -194,7 +212,10 @@ var view3d = (function () {
         this.camera.updateProjectionMatrix();
 	this.camera.lookAt( this.scene.position );
 
+        this.renderer.clear();
         this.renderer.render( this.scene, this.camera );
+        this.renderer.clear( false, true, false ); // clear depth buffer
+        this.renderer.render( this.overlay, this.camera );    // render overlay
     };
 
     // Create a THREE mesh out of vertex/face lists
@@ -224,6 +245,22 @@ var view3d = (function () {
         mesh.add(mesh.back);
         return mesh;
     };
+
+    function make_outline (verts) {
+        var geom = new THREE.Geometry(), x, y, res = 11;
+        for(x = 0; x < res-1; x++)
+            geom.vertices.push(new THREE.Vector3(verts[x][0], verts[x][1], verts[x][2]));
+        for(x = res-1; x <= res*res; x+=res)
+            geom.vertices.push(new THREE.Vector3(verts[x][0], verts[x][1], verts[x][2]));
+        for(x = res*res-1; x > res*(res-1); x--)
+            geom.vertices.push(new THREE.Vector3(verts[x][0], verts[x][1], verts[x][2]));
+        for(x = res*(res-1); x >= 0; x-=res)
+            geom.vertices.push(new THREE.Vector3(verts[x][0], verts[x][1], verts[x][2]));
+        var outline = new THREE.Line(geom, new THREE.LineBasicMaterial({color: 0xFFFFFF}),
+                                     THREE.LineStrip);
+        return outline;
+    };
+
 
     // Construct a THREE object that represents an optical element
     // with an XYZ-axis.
@@ -260,13 +297,18 @@ var view3d = (function () {
     this.Representation = function (view, meshdata, args) {
         this.view = view;
         this.obj = new THREE.Object3D();
-        this.obj.add(make_axis());
+        //this.obj.add(make_axis());
+        view.scene.add(this.obj);
+        this.outline = new THREE.Object3D();
+        this.outline.position = this.obj.position;
+        this.outline.rotation = this.obj.rotation;
         if (meshdata) {
             this.set_mesh(meshdata);
         } else {
             this.mesh = new THREE.Mesh();
         }
-        view.scene.add(this.obj);
+        this.axis = make_axis();
+        view.overlay.add(this.axis);
         this.update(args);
 
         view.render();
@@ -274,6 +316,8 @@ var view3d = (function () {
 
     this.Representation.prototype.remove = function () {
         this.view.scene.remove(this.obj);
+        this.view.overlay.remove(this.axis);
+        this.view.overlay.remove(this.outline);
         this.view.render();
     };
 
@@ -291,6 +335,12 @@ var view3d = (function () {
         this.mesh.rotation.set(alignment.x* radians,
                                alignment.y * radians,
                                alignment.z * radians);
+
+        this.view.render();
+    };
+
+    this.Representation.prototype.highlight = function(high) {
+        this.outline.children[0].visible = high;
         this.view.render();
     };
 
@@ -302,6 +352,18 @@ var view3d = (function () {
         this.obj.add(this.mesh);
         mesh.position.set(pos.x, pos.y, pos.z);
         mesh.rotation.set(rot.x, rot.y, rot.z);
+
+        if (this.outline && this.outline.children[0]) {
+            this.view.overlay.remove(this.outline);
+            var visible = this.outline.children[0].visible;
+        }
+        var outline_line = make_outline(meshdata.verts);
+        this.outline.add(outline_line);
+        outline_line.position = mesh.position;
+        outline_line.rotation = mesh.rotation;
+        outline_line.visible = visible;
+        this.view.overlay.add(this.outline);
+
         this.view.render();
     };
 

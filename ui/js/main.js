@@ -277,7 +277,7 @@
         // };
         // sock.onmessage = function(e) {
         //     console.log('message', e.data);
-        //     self.draw_traces(e.data);
+        //     self.draw_tbbbraces(e.data);
         // };
         // sock.onclose = function() {
         //     console.log('close');
@@ -454,7 +454,10 @@
             if (!!system) {
                 self.selected_system(system);
             }
+            if (self.selected_element())
+                self.selected_element().repr.highlight(false);
             self.selected_element(element);
+            element.repr.highlight(true);
         };
 
         self.select_source = function (source, system) {
