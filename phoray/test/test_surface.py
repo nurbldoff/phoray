@@ -4,8 +4,8 @@ from unittest import TestCase
 
 from numpy import array, allclose, NaN, isnan
 
-from phoray.surface import Plane, Sphere, Cylinder, Paraboloid
-from phoray.ray import Ray, Rays
+from phoray.surface import Plane, Sphere, Cylinder, Ellipsoid, Paraboloid
+from phoray.ray import Rays
 
 from . import PhorayTestCase
 
@@ -49,7 +49,6 @@ class SphereSurfaceTestCase(PhorayTestCase):
         rays = Rays(array([(0, 0, -1)]), array([(A, B, 1)]) /
                     sqrt(A**2 + B**2 + 1), None)
         reflection = sphere.reflect(rays)
-        print "rays", rays, "refl", reflection
         self.assertTrue(allclose(reflection.endpoints + reflection.directions,
                                  [(0, 0, -1)]))
 
@@ -66,12 +65,23 @@ class CylinderSurfaceTestCase(PhorayTestCase):
         self.assertTrue(allclose(reflection[2], -ray.directions[0][2]))
 
 
+class EllipsoidSurfaceTestCase(PhorayTestCase):
+
+    def test_reflect_spherical(self):
+        """Check that an ellipsoid with all equal radii is a sphere."""
+        sphere = Ellipsoid(1, 1, 1)
+        rays = Rays(array([(0, 0, -1)]), array([(A, B, 1)]) /
+                    sqrt(A**2 + B**2 + 1), None)
+        reflection = sphere.reflect(rays)
+        self.assertTrue(allclose(reflection.endpoints + reflection.directions,
+                                 [(0, 0, -1)]))
+
+
 class ParaboloidSurfaceTestCase(PhorayTestCase):
 
     def test_reflect(self):
         surf = Paraboloid(1, 1, -1)
         ray = Rays(array([(0, 0, -0.25)]), array([(A, B, 1)]), None)
         reflection = surf.reflect(ray)
-        print "refl", reflection
         self.assertAlmostEquals(reflection.directions[0][0], 0)
         self.assertAlmostEquals(reflection.directions[0][1], 0)
