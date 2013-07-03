@@ -295,6 +295,44 @@ var view3d = (function () {
         return axis;
     };
 
+    // An overlay object visualizing a selected representation
+    var Selection = function (view, repr) {
+        this.overlay = view.overlay;
+        this.repr = repr;
+
+        this.obj = new THREE.Object3D();  // the main container
+        this.obj.position = repr.obj.position;
+        this.obj.rotation = repr.obj.rotation;
+        this.overlay.add(this.obj);
+
+        this.outline = new THREE.Object3D();  // mesh outline
+        this.outline.visible = false;
+        this.obj.add(this.outline);
+
+        this.axis = make_axis();
+        // this.axis.position = this.obj.position;
+        // this.axis.rotation = this.obj.rotation;
+        this.axis.visible = false;
+        this.obj.add(this.axis);
+    };
+
+    Selection.prototype.set_visible = function (visible) {
+        this.outline.visible = visible;
+        this.axis.traverse(function(obj) {obj.visible = visible;});
+    };
+
+    Selection.prototype.update = function (meshdata) {
+        this.obj.remove(this.outline);
+        var visible = this.axis.visible;
+        var outline = make_outline(meshdata.verts);
+        outline.visible = this.outline.visible;
+        outline.position = this.repr.mesh.position;
+        outline.rotation = this.repr.mesh.rotation;
+        outline.visible = visible;
+        this.outline = outline;
+        this.obj.add(this.outline);
+    };
+
 
     // A representation of an item
     this.Representation = function (view, meshdata, args) {
@@ -302,16 +340,12 @@ var view3d = (function () {
         this.obj = new THREE.Object3D();
         //this.obj.add(make_axis());
         view.scene.add(this.obj);
-        this.outline = new THREE.Object3D();
-        this.outline.position = this.obj.position;
-        this.outline.rotation = this.obj.rotation;
+        this.selection = new Selection(view, this);
         if (meshdata) {
             this.set_mesh(meshdata);
         } else {
             this.mesh = new THREE.Mesh();
         }
-        this.axis = make_axis();
-        view.overlay.add(this.axis);
         this.update(args);
 
         view.render();
@@ -325,10 +359,8 @@ var view3d = (function () {
     };
 
     this.Representation.prototype.update = function (args) {
-        var position = args.position,
-            rotation = args.rotation,
-            offset = args.offset,
-            alignment = args.alignment,
+        var position = args.position, rotation = args.rotation,
+            offset = args.offset, alignment = args.alignment,
             radians = Math.PI / 180;
         this.obj.position.set(position.x, position.y , position.z);
         this.obj.rotation.set(rotation.x * radians,
@@ -338,12 +370,11 @@ var view3d = (function () {
         this.mesh.rotation.set(alignment.x* radians,
                                alignment.y * radians,
                                alignment.z * radians);
-
         this.view.render();
     };
 
     this.Representation.prototype.highlight = function(high) {
-        this.outline.children[0].visible = high;
+        this.selection.set_visible(high);
         this.view.render();
     };
 
@@ -353,21 +384,9 @@ var view3d = (function () {
         this.obj.remove(this.mesh);
         this.mesh = mesh;
         this.obj.add(this.mesh);
-        mesh.position.set(pos.x, pos.y, pos.z);
-        mesh.rotation.set(rot.x, rot.y, rot.z);
-
-        this.view.overlay.remove(this.outline);
-        if (this.outline && this.outline.children[0]) {
-            var visible = this.outline.children[0].visible;
-        }
-        var outline_line = make_outline(meshdata.verts);
-        this.outline = new THREE.Object3D();
-        this.outline.add(outline_line);
-        outline_line.position = mesh.position;
-        outline_line.rotation = mesh.rotation;
-        outline_line.visible = visible;
-        this.view.overlay.add(this.outline);
-
+        mesh.position = pos;
+        mesh.rotation = rot; //.set(rot.x, rot.y, rot.z);
+        this.selection.update(meshdata);
         this.view.render();
     };
 
