@@ -348,11 +348,9 @@ class Ellipsoid(Surface):
         """
         Surface normal at point p, calculated through the gradient
         """
-        px, py, pz = p.T
-        n = -array((2 * px / self.a ** 2,
-                    2 * py / self.b ** 2,
-                    2 * (pz + self.c) / self.c ** 2))
-        return (n / vector_norm(n, axis=0)).T
+        p = -((p + self.offset) *
+              (2 / self.a ** 2, 2 / self.b ** 2, 2 / self.c ** 2))
+        return (p.T / vector_norm(p, axis=1)).T
 
     def intersect(self, ray):
         rx, ry, rz = r = ray.directions.T
