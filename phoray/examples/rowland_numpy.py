@@ -10,7 +10,7 @@ from numpy import array
 
 #from phoray.minivec import Vec
 #from phoray.ray import Ray
-from phoray.surface import Sphere, Plane
+from phoray.surface import Sphere, Plane, Cylinder
 from phoray.element import ReflectiveGrating, Detector, Mirror
 from phoray.source import GaussianSource
 from phoray.system import OpticalSystem
@@ -24,7 +24,7 @@ Simulate a Rowland (spherical grating) spectrometer
 angle = 2        # incidence angle on the grating (degrees)
 energy = 500     # center energy of the incident light (eV)
 wl = 1.24e-6/energy      # ...sloppily converted into wavelength
-order = 0       # diffraction order to look at
+order = -1       # diffraction order to look at
 R = 5.0          # radius of the grating
 d = 1200e3       # grating line density, lines/m
 
@@ -32,7 +32,7 @@ d = 1200e3       # grating line density, lines/m
 s = Sphere(5.0, xsize=0.1, ysize=0.1)
 sg = ReflectiveGrating(d=1/d, order=order, geometry=s,
                        rotation=(90, 0, 0))
-sg = Mirror(geometry=s, rotation=(90, 0, 0))
+#sg = Mirror(geometry=s, rotation=(90, 0, 0))
 
 # Detector
 p = Plane(xsize=0.1, ysize=0.1)
@@ -40,10 +40,11 @@ row = Rowland(R_gr=R,
               d_gr=d/1000,
               theta_in=angle)
 detx, dety = row.add_ray(energy, order, 0)   # calculate the focal
+#detx, dety = row.get_detector_position2(order, wl)
 print "source pos:", row.source_x, row.source_y
-print "detector pos:", detx, dety
-det = Mirror(geometry=p, position=(0, dety, detx),
-             rotation=(90-degrees(2*atan(dety/detx), 0., 0.)))
+print "detectorzz pos:", detx, dety
+det = Detector(geometry=p, position=(0, dety, detx),
+               rotation=(90-degrees(2*atan(dety/detx)), 0., 0.))
 
 
 # Incoming light distribution
@@ -62,17 +63,12 @@ srcs = [GaussianSource(position=(0, row.source_y, row.source_x),
 
 os = OpticalSystem(elements=[sg, det], sources=srcs)
 
-n_rays = 10000   # number of rays
+n_rays = 10000  # number of rays
 
 print "mirror pos", sg.position
 print "source", srcs[0].position, srcs[1].rotation
 
 trace = os.trace(n_rays)
-for t in trace:
-    for u in t:
-        if u is not None:
-            print "end", u.endpoints[0], "dir", u.directions[0]
-    print
 
 with open("rowland.dat", "w") as f:
     w = csv.writer(f, delimiter="\t")
