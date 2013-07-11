@@ -49,9 +49,9 @@ class Rowland(object):
     def __init__(self, R_gr, d_gr, theta_in, source_d=0):
         self.R_gr = R_gr
         self.d_gr = d_gr
-        self.theta_in = theta_in/180 * pi
+        self.theta_in = radians(theta_in)
         if source_d == 0:
-            self.source_d = 2*self.R_gr/2*sin(self.theta_in)
+            self.source_d = self.R_gr * sin(self.theta_in)
         else:
             self.source_d = source_d
         #self.source_d = -2*R_gr/2*tan(theta_in) / sqrt(1+tan(theta_in)**2)
@@ -62,15 +62,18 @@ class Rowland(object):
 
 
     def get_detector_position2(self, order, wavelength):
-        theta_out = pi/2 - arin(-order*wavelength*self.d_gr +
-                                sin(pi/2-self.theta_in))
+        theta_out = pi/2 - asin(-order*wavelength*self.d_gr +
+                                sin(pi/2-radians(self.theta_in)))
         d_out = 2*self.R_gr/2*tan(theta_out) / sqrt(1+tan(theta_out)**2)
         x_det = d_out * cos(theta_out)
         y_det = d_out * sin(theta_out)
         return (x_det, y_det)
 
-    def get_detector_position(self, order, wavelength):
-        theta_out = acos(cos(self.theta_in) - order*wavelength/(1e-3/self.d_gr))
+    def get_detector_position(self, order, wl):
+        print order, wl, self.d_gr
+        print "d:", order * wl * self.d_gr * 1000
+        print "theta_in:", self.theta_in
+        theta_out = acos(cos(self.theta_in) - order*wl*self.d_gr*1000)
         r_out = self.R_gr * sin(theta_out)
         return (theta_out, r_out)
 
@@ -82,7 +85,7 @@ class Rowland(object):
             d = d_gr[0] + d_gr[1]*t + d_gr[2]*t**2 + ...,
         where t is a parameter along the grating circle.
         """
-        if hasattr(self.d_gr,'__iter__'):   # i.e. it's a VLS grating
+        if hasattr(self.d_gr, '__iter__'):   # i.e. it's a VLS grating
             t = self.R_gr*1000 * acos((self.R_gr-y)/self.R_gr) * sign(x)
             #d = 0
             #for i,di in enumerate(self.d_gr):
@@ -150,5 +153,3 @@ class Rowland(object):
 
     def clean(self):
         self.rays=[]
-
-
