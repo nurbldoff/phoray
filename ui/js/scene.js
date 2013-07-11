@@ -160,8 +160,15 @@ var view3d = (function () {
         return parseInt(s.slice(1), 16);
     };
 
+    var color_from_string_times = function (s, factor) {
+        var r = parseInt(s.slice(1, 3), 16),
+            g = parseInt(s.slice(3, 5), 16),
+            b = parseInt(s.slice(5, 7), 16);
+        return ~~(r * factor) << 16 ^ ~~(g * factor) << 8 ^ ~~(b * factor);
+    };
+
     this.View.prototype.draw_traces = function (data, colors) {
-        console.log("draw_trace", data, colors);
+        console.log("draw_trace");
         for (var system in data) {
             var tmpdata = data[system];
             tmpdata.succeeded.forEach( function (trace) {
@@ -175,8 +182,8 @@ var view3d = (function () {
                 }
                 var line = new THREE.Line(
                     geometry, new THREE.LineBasicMaterial( {
-                        color: color_from_string(colors[system]),
-                        opacity: 0.05, linewidth: 0.5} ));
+                        color: color_from_string_times(colors[system], Math.random()),
+                        opacity: 0.05, linewidth: 1} ));
                 this.traces.add(line);
             }.bind(this));
             tmpdata.failed.forEach( function (trace) {
@@ -190,10 +197,10 @@ var view3d = (function () {
                 }
                 var line = new THREE.Line(
                     geometry, new THREE.LineBasicMaterial( {
-                        color: color_from_string(colors[system]),
+                        color: color_from_string_times(colors[system], 0.5),
                         dashSize: 0.2,
                         gapSize: 0.1,
-                        opacity: 0.05, linewidth: 0.25} ), THREE.LineStrip);
+                        opacity: 0.05, linewidth: 1} ), THREE.LineStrip);
                 this.traces.add(line);
             }.bind(this));
         }
@@ -248,6 +255,7 @@ var view3d = (function () {
         return mesh;
     };
 
+    // Take a list of mesh vertices and make a line running along the edges of it.
     function make_outline (verts) {
         var geom = new THREE.Geometry(), x, y, res = 11;
         for(x = 0; x < res-1; x++)
@@ -258,9 +266,9 @@ var view3d = (function () {
             geom.vertices.push(new THREE.Vector3(verts[x][0], verts[x][1], verts[x][2]));
         for(x = res*(res-1); x >= 0; x-=res)
             geom.vertices.push(new THREE.Vector3(verts[x][0], verts[x][1], verts[x][2]));
-        var outline = new THREE.Line(geom, new THREE.LineBasicMaterial({color: 0xFFFFFF,
-                                                                       linewidth: 2}),
-                                     THREE.LineStrip);
+        var outline = new THREE.Line(
+            geom, new THREE.LineBasicMaterial({color: 0xFFFFFF, linewidth: 2}),
+            THREE.LineStrip);
         return outline;
     };
 

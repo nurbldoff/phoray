@@ -306,12 +306,19 @@
             }
         };
 
+        var old_data_str = "";
         self.send = function () {
-            var data = ko.mapping.toJS(self);
-            console.log("send", data);
-            $.ajax({url: "/system", type: "POST",
-                    data: JSON.stringify(data), contentType: "application/json",
-                    success: _update});
+            var data = ko.mapping.toJS(self),
+                data_str = JSON.stringify(data);
+            if (data_str != old_data_str) {
+                console.log("send", data);
+                $.ajax({url: "/system", type: "POST",
+                        data: data_str, contentType: "application/json",
+                        success: _update});
+                old_data_str = data_str;
+            } else {
+                console.log("Data unchanged; not sending.");
+            }
         };
 
         var tracing = false,  // flag used to block new traces while tracing
