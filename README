@@ -1,6 +1,25 @@
 A "physical" raytracer written in python.
 
-No dependencies. To play with it, start the UI with "python server.py" 
-and then point a webgl capable browser to http://localhost:8080.
+This is a raytracer written in python. It's different from most raytracers in that it calculates the rays *forward* in the direction of light propagation, instead of backwards from the image plane. It is not intended for producing images of reflective spheres, but rather for simulating optical systems.
 
-Note: the stuff in the "examples" directory probably doesn't work anymore.
+
+== Installation ==
+
+*TODO*
+
+
+== Dependencies ==
+
+Phoray depends on 'NumPy' (http://www.numpy.org/).
+
+
+== Usage ==
+
+See examples. TODO: update the examples.
+
+There is also an experimental and rather incomplete browser UI, which can be started by running "python server.py" in the phoray directory. Then point a modern, webgl capable browser to http://localhost:8080 and play around. (Note: only recent versions of Chrome and Firefox have been tested and are known to work.)
+
+
+== Running unit tests ==
+
+Run "nosetests" (requires 'Nose' to be installed).
