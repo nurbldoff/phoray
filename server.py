@@ -94,9 +94,14 @@ def trace():
     n = int(query.n)  # number of rays to trace
     traces = system.trace(n)
 
+    # Format the footprint data for consumption by the UI.
+    # Separates out the failed rays and add "dummies" for
+    # non-terminated ones.
     result = []
     for trace in traces:
-        tmp = []
+        succeeded = []
+        failed = []
+        tmp = dict(succeeded=succeeded, failed=failed)
         for i in xrange(n):
             tmp2 = []
             for j, tr in enumerate(trace):
@@ -108,20 +113,15 @@ def trace():
                     break
                 else:
                     tmp2.append(tuple(tr.endpoints[i]))
+            if broke:
+                failed.append(tmp2)
             if not broke:
                 tmp2.append(tuple(tr.endpoints[i] + tr.directions[i]))
-            tmp.append(tmp2)
+                succeeded.append(tmp2)
         result.append(tmp)
-
-    # for trace in traces:
-    #     tmp = [[tuple(tr.endpoints[i]) for tr in trace
-    #             if not isnan(tr.endpoints[i][0])]
-    #            for i in xrange(n)]
-    #     result.append(tmp)
 
     dt = time() - t0
     print "traced %d rays, took %f s." % (n, dt)
-    #print result[0][0][0], result[0][0][1]
     return dict(traces=result, time=dt)
 
 
