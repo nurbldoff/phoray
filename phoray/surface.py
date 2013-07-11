@@ -6,7 +6,6 @@ from math import *
 import numpy as np
 from numpy import (array, dot, cross, where, sqrt,
                    cos, sin, arccos, arcsin)
-from numpy.linalg import norm
 
 #from numba import autojit
 
@@ -52,9 +51,6 @@ class Surface(object):
         xaxis = array((1, 0, 0))
         a = cross(xaxis, normal)
         b = cross(normal, a)
-        #rot = rotation_matrix(pi/2, a)
-        #d = dot(normal, rot[:3, :3].T)
-        # TODO: normalize?
         return (b.T / vector_norm(b, axis=1)).T
 
     def reflect(self, rays):
@@ -78,44 +74,45 @@ class Surface(object):
         """
         Diffract the given ray in the surface, returning the diffracted ray.
 
-        TODO: it's definitely possible to simplify this.
+        TODO: it's definitely possible to simplify this. Also, check for
+        correctness!
         """
 
-        P = self.intersect(rays)
-        if P is None:
-            return None
-        else:
-            refl = self.reflect(rays)
-            # if order == 0 or d == 0 or rays.wavelength == 0:
-            #     return refl
-            if d is None:
-                if line_spacing_function is None:
-                    return refl
-                else:
-                    # VLS grating
-                    d = line_spacing_function(P)
-            n = self.normal(P)
-            r_ref = refl.directions
-            g = self.grating_direction(P)
-            a = cross(g, n)
+        refl = self.reflect(rays)
+        P = refl.endpoints
+        if order == 0 or d == 0:
+            return refl
+        if d is None:
+            if line_spacing_function is None:
+                return refl
+            else:
+                # VLS grating
+                d = line_spacing_function(P)
+        n = self.normal(P)
+        print "n:", vector_norm(n[0])
+        r_ref = refl.directions
+        g = self.grating_direction(P)
+        a = cross(g, n)  # surface tangent
 
-            alpha = angle_between_vectors(g, r_ref, axis=1)
-            x = cos(alpha)
-            y = sin(alpha)
+        alpha = angle_between_vectors(g, r_ref, axis=1)
+        x = cos(alpha)
+        y = sin(alpha)
+        print "x: %r, y: %r" % (x[0], y[0])
 
-            phi = arccos((g * r_ref).sum(axis=1))  # dot product
-            theta = arccos((n * r_ref).sum(axis=1) / sin(phi))
-            theta_m = arcsin(order * rays.wavelengths /
-                             (d * sin(phi)) + sin(theta))
-            r_diff = g.T * x + a.T * y * sin(theta_m) + n.T * y * cos(theta_m)
-            return Rays(P, r_diff.T, rays.wavelengths)
+        phi = arccos((g * r_ref).sum(axis=1))  # dot product
+        theta = arccos((n * r_ref).sum(axis=1) / sin(phi))
+        theta_m = arcsin(order * rays.wavelengths /
+                         (d * sin(phi)) + sin(theta))
+        r_diff = g.T * x + a.T * y * sin(theta_m) + n.T * y * cos(theta_m)
+        return Rays(P, r_diff.T, rays.wavelengths)
 
     def refract(self, ray, i1, i2):
         """
         Refurns the refracted ray given an incident ray.
         Uses Snell's law. Does *not* simulate dispersion.
 
-        FIXME: Check that this is correct.
+        FIXME: I don't think this is right.
+        TODO: Not yet ported to numpy.
         """
         P = self.intersect(ray)
         if P is not None:

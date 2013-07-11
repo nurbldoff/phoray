@@ -11,10 +11,11 @@ from ray import Rays
 
 class Element(Member):
 
-    def __init__(self, geometry=Surface(), *args, **kwargs):
+    def __init__(self, geometry=Surface(), _footprint=True, *args, **kwargs):
         self.geometry = geometry
-        Member.__init__(self, *args, **kwargs)
+        self.save_footprint = _footprint
         self.footprint = defaultdict(list)
+        Member.__init__(self, *args, **kwargs)
 
     def propagate(self, rays, source=0):
         """
@@ -22,9 +23,10 @@ class Element(Member):
         results from interacting with the surface (e.g. reflection)
         """
         new_rays = self._propagate(rays)
-        self.footprint[source] = array((new_rays.endpoints.T[0],
-                                        new_rays.endpoints.T[1],
-                                        new_rays.wavelengths)).T
+        if self.save_footprint:
+            self.footprint[source] = array((new_rays.endpoints.T[0],
+                                            new_rays.endpoints.T[1],
+                                            new_rays.wavelengths)).T
         return new_rays
 
 
