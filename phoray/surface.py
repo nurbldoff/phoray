@@ -64,7 +64,6 @@ class Surface(object):
             return None
         else:
             normal = self.normal(P)
-            print "normal", normal[0]
             dots = (r * normal).sum(axis=1) * 2.0
             refl = r - (normal.T * dots).T
             return Rays(P, refl, rays.wavelengths)
@@ -150,33 +149,23 @@ class Plane(Surface):
 
     def intersect(self, rays):
         rx, ry, rz = r = rays.directions.T
-
-        # if rz < 0:  # backlit
-        #     #print "backlit"
-        #     return None
-
         ax, ay, az = a = rays.endpoints.T
         bx, by, bz = a + r
 
         t = -az / (bz - az)
-        # if t < 0:
-        #     # Backtracking the ray -> no intersection
-        #     return None
         p = a + t * r
         px, py, pz = p
-        print "px", px.shape
+
         halfxsize = self.xsize / 2
         halfysize = self.ysize / 2
         nans = np.empty((3, len(px)))
         nans[:] = np.NaN
-        q = where((np.abs(px) <= halfxsize) & (np.abs(py) <= halfysize), p, nans)
-        # if (self.xsize is None and self.ysize is None) or \
-        #         (-self.xsize / 2 <= p[0] <= self.xsize / 2 and
-        #          -self.ysize / 2 <= p[1] <= self.ysize / 2):
-        #     return p
-        # else:
-        #     print "outside"
-        #     return None
+        # remove rays that are outside or backlighting
+        # TODO: is it possible to somehow mask out these values earlier?
+        q = where(((-halfxsize <= px <= halfxsize) &
+                   (-halfysize <= py <= halfysize) &
+                   (rz >= 0) & (t >= 0)),
+                  p, nans)
         return q.T
 
     def mesh(self, res=10):
