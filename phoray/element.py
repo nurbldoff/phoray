@@ -22,12 +22,13 @@ class Element(Member):
         Takes a ray in global coordinates and returns the ray that
         results from interacting with the surface (e.g. reflection)
         """
-        new_rays = self._propagate(rays)
+
+        new_rays = self._propagate(self.localize(rays))
         if self.save_footprint:
             self.footprint[source] = array((new_rays.endpoints.T[0],
                                             new_rays.endpoints.T[1],
                                             new_rays.wavelengths)).T
-        return new_rays
+        return self.globalize(new_rays)
 
 
 class Mirror(Element):
@@ -35,10 +36,7 @@ class Mirror(Element):
     """A mirror reflects incoming rays in its surface."""
 
     def _propagate(self, rays):
-
-        rays0 = self.localize(rays)
-        reflected_rays = self.geometry.reflect(rays0)
-        return self.globalize(reflected_rays)
+        return self.geometry.reflect(rays)
 
 
 class Detector(Element):
@@ -48,10 +46,8 @@ class Detector(Element):
     """
 
     def _propagate(self, rays):
-        rays0 = self.localize(rays)
-        p = self.geometry.intersect(rays0)
-        pos = self.globalize_vector(p)
-        return Rays(pos, None, rays.wavelengths)
+        p = self.geometry.intersect(rays)
+        return Rays(p, None, rays.wavelengths)
 
 
 class Screen(Element):
@@ -61,14 +57,9 @@ class Screen(Element):
     intersection of a beam.
     """
 
-    def _propagate(self, ray):
-        ray0 = self.localize(ray)
-        p = self.geometry.intersect(ray0)
-        if p is not None:
-            p = self.globalize_vector(p)
-            return Ray(p, ray.direction, ray.wavelength)
-        else:
-            return None
+    def _propagate(self, rays):
+        p = self.geometry.intersect(rays)
+        return Ray(p, rays.direction, rays.wavelength)
 
 
 class ReflectiveGrating(Element):
@@ -87,18 +78,10 @@ class ReflectiveGrating(Element):
         #print "Mirror", args, kwargs
         Element.__init__(self, *args, **kwargs)
 
-    def _propagate(self, ray):
-
-        if ray is not None:
-            ray0 = self.localize(ray)
-            diffracted_ray = self.geometry.diffract(
-                ray0, self.d, self.order)
-            if diffracted_ray is None:
-                return None
-            else:
-                return self.globalize(diffracted_ray)
-        else:
-            return None
+    def _propagate(self, rays):
+        diffracted_rays = self.geometry.diffract(
+            rays, self.d, self.order)
+        return diffracted_rays
 
 
 class ReflectiveVLSGrating(Mirror):
@@ -130,18 +113,10 @@ class ReflectiveVLSGrating(Mirror):
         d *= cos(theta)
         return 1e-3 / d
 
-    def _propagate(self, ray):
-
-        if ray is not None:
-            ray0 = self.localize(ray)
-            diffracted_ray = self.geometry.diffract(ray0, None, self.order,
-                                                    self.get_line_distance)
-            if diffracted_ray is None:
-                return None
-            else:
-                return self.globalize(diffracted_ray)
-        else:
-            return None
+    def _propagate(self, rays):
+        diffracted_rays = self.geometry.diffract(rays, None, self.order,
+                                                 self.get_line_distance)
+        return self.globalize(diffracted_rays)
 
 
 class Glass(Element):
@@ -154,14 +129,6 @@ class Glass(Element):
         Element.__init__(self, *args, **kwargs)
 
     def _propagate(self, ray):
-
-        if ray is not None:
-            ray0 = self.localize(ray)
-            refracted_ray = self.geometry.refract(ray0, self.index1,
-                                                  self.index2)
-            if refracted_ray is None:
-                return None
-            else:
-                return self.globalize(refracted_ray)
-        else:
-            return None
+        refracted_rays = self.geometry.refract(rays, self.index1,
+                                               self.index2)
+        return refracted_rays

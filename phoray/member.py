@@ -84,7 +84,8 @@ class Member(object):
         Transform a Ray in global coordinates into local coordinates
         """
         return Rays(self.localize_vector(rays.endpoints),
-                    self.localize_direction(rays.directions),
+                    (self.localize_direction(rays.directions)
+                     if (rays.directions is not None) else None),
                     rays.wavelengths)
 
     def globalize_vector(self, v):
@@ -102,7 +103,8 @@ class Member(object):
         Transform a local Ray into global coordinates
         """
         return Rays(self.globalize_vector(rays.endpoints),
-                    self.globalize_direction(rays.directions),
+                    (self.globalize_direction(rays.directions)
+                     if (rays.directions is not None) else None),
                     rays.wavelengths)
 
     def x_axis(self):
