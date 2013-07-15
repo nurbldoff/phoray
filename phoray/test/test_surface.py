@@ -1,8 +1,7 @@
-from math import degrees, fabs, sqrt
-from random import uniform
-from unittest import TestCase
+from math import sqrt, atan, sin, cos, asin
+from random import uniform, randint
 
-from numpy import array, allclose, NaN, isnan
+from numpy import array, allclose, isnan
 
 from phoray.surface import Plane, Sphere, Cylinder, Ellipsoid, Paraboloid
 from phoray.ray import Rays
@@ -36,10 +35,35 @@ class PlaneSurfaceTestCase(PhorayTestCase):
         self.assertTrue(allclose(reflection.directions, (0, 0, -1)))
 
     def test_reflect_miss(self):
+        """Test that rays missing an element have NaN endpoints."""
         plane = Plane()
         ray = Rays(array([(A+1, B, -1)]), array([(0, 0, 1)]), None)
         reflection = plane.reflect(ray)
         self.assertTrue(all(isnan(reflection.endpoints[0])))
+
+    def test_diffract(self):
+        """Test that diffraction works for a simple case."""
+        plane = Plane()
+        d = 1 / uniform(9e4, 1e5)
+        order = -1
+        wavelength = uniform(500e-9, 700e-9)
+        ray = Rays(array([(0, -abs(B), 1)]),
+                   array([(0, abs(B), -1)]) / sqrt(B ** 2 + 1),
+                   wavelength)
+        diffraction = plane.diffract(ray, d, order)
+        inc_angle = atan(abs(B))
+        exit_angle = asin(sin(inc_angle) + order * wavelength / d)
+        self.assertTrue(allclose(diffraction.directions[0],
+                                 (0, -sin(exit_angle), cos(exit_angle))))
+
+    def test_zeroth_order_diffraction_equals_reflection(self):
+        plane = Plane()
+        ray = Rays(array([(A, B, -1)]), array([(0, 0, 1)]), uniform(100, 1000))
+        reflection = plane.reflect(ray)
+        diffraction = plane.diffract(ray, uniform(0.001, 0.002), 0)
+        self.assertTrue(allclose(reflection.endpoints, diffraction.endpoints))
+        self.assertTrue(allclose(reflection.directions,
+                                 diffraction.directions))
 
 
 class SphereSurfaceTestCase(PhorayTestCase):
