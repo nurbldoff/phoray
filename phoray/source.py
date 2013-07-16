@@ -1,4 +1,5 @@
 from random import seed, randint, gauss
+from sys import maxint
 from collections import OrderedDict
 
 from numpy import array, dot, ones, zeros, random
@@ -49,7 +50,7 @@ class GaussianSource(Source):
 
     def __init__(self, size=Position(0, 0, 0),
                  divergence=Position(0, 0, 0),
-                 random_seed=randint(0, 1000000),
+                 random_seed=randint(0, maxint),
                  *args, **kwargs):
         self.size = Position(size)
         self.divergence = Position(divergence)
