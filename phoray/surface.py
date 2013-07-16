@@ -156,14 +156,11 @@ class Plane(Surface):
         p = a + t * r
         px, py, pz = p
 
-        halfxsize = self.xsize / 2
-        halfysize = self.ysize / 2
         nans = np.empty((3, len(px)))
         nans[:] = np.NaN
         # remove rays that are outside or backlighting
         # TODO: is it possible to somehow mask out these values earlier?
-        q = where(((-halfxsize <= px <= halfxsize) &
-                   (-halfysize <= py <= halfysize) &
+        q = where(((abs(px) <= self.xsize / 2) & (abs(py) <= self.ysize / 2) &
                    (rz >= 0) & (t >= 0)),
                   p, nans)
         return q.T
