@@ -1,8 +1,3 @@
-try:
-    import numpypy
-except:
-    pass
-
 import copy
 import json
 from pprint import pprint
