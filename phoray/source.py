@@ -1,12 +1,10 @@
 from random import seed, randint, gauss
-from sys import maxint
-from collections import OrderedDict
+from sys import maxsize
 
-from numpy import array, dot, ones, zeros, random
-from transformations import euler_matrix
+from numpy import array, ones, zeros, random
 
-from member import Member
-from ray import Rays
+from .member import Member
+from .ray import Rays
 from . import Rotation, Position
 
 
@@ -25,7 +23,7 @@ class Source(Member):
 
     def generate(self, n):
         """Needs to be overridden by child classes.
-        Should return a list of Rays, probably limited by n.
+        Should return Rays, probably limited by n.
         """
 
 
@@ -50,7 +48,7 @@ class GaussianSource(Source):
 
     def __init__(self, size=Position(0, 0, 0),
                  divergence=Position(0, 0, 0),
-                 random_seed=randint(0, maxint),
+                 random_seed=randint(0, maxsize),
                  *args, **kwargs):
         self.size = Position(size)
         self.divergence = Position(divergence)
@@ -73,6 +71,5 @@ class GaussianSource(Source):
 
         rays = self.globalize(Rays(endpoints=s, directions=d,
                                    wavelengths=ones((n,)) * self.wavelength))
-        print "Ray 0", rays.endpoints[0], rays.directions[0]
 
         return rays

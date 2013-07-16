@@ -4,9 +4,9 @@ from collections import defaultdict
 
 from numpy import array, NaN, empty
 
-from member import Member
-from surface import Surface
-from ray import Rays
+from .member import Member
+from .surface import Surface
+from .ray import Rays
 
 
 class Element(Member):

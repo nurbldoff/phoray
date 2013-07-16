@@ -6,8 +6,8 @@ from time import time
 from numpy import isnan
 from bottle import get, post, request, run, static_file, route
 
-from phoray.meta import (classes, schemas, create_system, create_element,
-                         create_source, create_geometry)
+from meta import (classes, schemas, create_system, create_element,
+                  create_source, create_geometry)
 import util
 
 
@@ -25,7 +25,7 @@ def staticpath(filepath):
 
 @get('/schema')
 def get_schema():
-    print "schema"
+    print("schema")
     pprint(schemas)
     return dict((kind, dict((type, schemas[id(cls)])
                             for type, cls in clss.items()))
@@ -45,7 +45,7 @@ def define_system():
     diff = [util.dictdiff(query["systems"][i],
                           util.object_to_dict(data[i], schemas))
             for i in range(len(data))]
-    print "diff: ",
+    print("diff: ",)
     pprint(diff)
     if len(diff) and diff[0]:
         return get_system()
@@ -116,7 +116,7 @@ def trace():
         result.append(tmp)
 
     dt = time() - t0
-    print "traced %d rays, took %f s." % (n, dt)
+    print("traced %d rays, took %f s." % (n, dt))
     return dict(traces=result, time=dt)
 
 

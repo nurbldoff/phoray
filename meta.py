@@ -5,7 +5,7 @@ from imp import find_module, load_module
 from operator import itemgetter
 from collections import OrderedDict
 
-import system, element, surface, source
+from phoray import system, element, surface, source
 import util
 
 
@@ -41,7 +41,6 @@ schemas = dict((id(cls), util.signature(cls))
 
 def create_system(spec={}):
     """Create a System instance from specifications."""
-    print "create_system"
     pprint(dict(spec))
     cls = classes["System"][spec.get("type", "Free")]
     args = spec.get("args", {})
@@ -51,7 +50,6 @@ def create_system(spec={}):
                        for srcspec in args.get("sources", [])]
     pprint(args)
     system = cls(_id=spec.get("_id"), **args)
-    print "system.elements", system.elements
     return system
 
 

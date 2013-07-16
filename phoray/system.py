@@ -2,10 +2,8 @@
 from itertools import count
 from math import *
 
-import numpy as np
-
-from member import Member
-from ray import Ray
+from .member import Member
+from .ray import Ray
 
 
 class OpticalSystem(Member):
@@ -66,7 +64,7 @@ class OpticalSystem(Member):
     def trace(self, n=1):
         """Generate some rays and propagate them through the system."""
 
-        print "trace, n %d" % n
+        print("trace, n %d" % n)
 
         for element in self.elements:
             element.footprint.clear()

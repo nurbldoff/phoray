@@ -3,11 +3,11 @@ from math import *
 
 from numpy import array, dot, ones, zeros, radians
 from numpy.linalg import inv as inverse_matrix
-from transformations import (euler_matrix, translation_matrix,
-                             concatenate_matrices)
 
-from ray import Rays
-from phoray import current_id
+from .transformations import (euler_matrix, translation_matrix,
+                              concatenate_matrices)
+from .ray import Rays
+from .phoray import current_id
 from . import Position
 
 
@@ -23,7 +23,6 @@ class Frame(object):
         self.calculate_matrices()
 
     def calculate_matrices(self):
-        print self.rotation
         rotate = euler_matrix(*radians(self.rotation), axes="rxyz")
 
         self._matloc = concatenate_matrices(
@@ -38,7 +37,6 @@ class Frame(object):
 
     def localize_direction(self, v):
         """A direction does not change with translation."""
-        print "localize_dir", len(v)
         tmp = zeros((len(v), 4))  # make 4-vectors for translations
         tmp[:, :3] = v
         return dot(tmp, self._matloc)[:, :3]
@@ -63,7 +61,7 @@ class Member(object):
     def __init__(self, _id=None, frames=None):
 
         if _id is None:
-            self._id = current_id.next()
+            self._id = next(current_id)
         else:
             self._id = _id
 

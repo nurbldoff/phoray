@@ -5,7 +5,6 @@ from pprint import pprint
 import numpy as np
 
 from phoray import surface, element, source
-from phoray.minivec import Vec
 from phoray import Length, Position, Rotation
 
 
@@ -14,7 +13,6 @@ def list_to_dict(l):
 
 
 def dict_to_list(d):
-    print "dict_to_list",
     pprint(d)
     indexes = d.keys()
     l = []
@@ -42,7 +40,6 @@ def dictdiff(d1, d2):
                         c[k] = dictdiff(d1[k], d2[k])
                         continue
                     elif isinstance(d2[k], list):
-                        print d1[k], d2[k]
                         c[k] = dict_to_list(dictdiff(list_to_dict(d1[k]),
                                                      list_to_dict(d2[k])))
     return c
@@ -54,7 +51,6 @@ def object_to_dict(obj, schemas):
     schema = schemas[id(obj.__class__)]
     for name in schema:
         value = getattr(obj, name)
-        print name, value
         objdict["args"][name] = convert_attr(value, schemas)
     if hasattr(obj, "_id"):
         objdict["_id"] = obj._id
@@ -78,10 +74,7 @@ def system_to_dict(obj, schemas, objtype=None):
 
 
 def convert_attr(attr, schemas):
-    print "convert attr", attr, type(attr)
-    if isinstance(attr, Vec):
-        return attr.dict()
-    elif isinstance(attr, surface.Surface):
+    if isinstance(attr, surface.Surface):
         return object_to_dict(attr, schemas)
     elif isinstance(attr, list):
         return [object_to_dict(item, schemas) for item in attr]
@@ -101,19 +94,17 @@ def signature(cls):
     bases = inspect.getmro(cls)
     for base in (bases[:-1]):  # skip the object class
         spec = inspect.getargspec(base.__init__)
-        print base.__name__
         if len(spec.args[1:]) != len(spec.defaults):
-            print ("The init function for %s is missing default arguments!" %
-                   cls.__name__)
+            print("The init function for %s is missing default arguments!" %
+                  cls.__name__)
             return None
         for i, arg in enumerate(spec.args[1:]):
             if not arg.startswith("_"):
                 value = spec.defaults[i]
                 argtype = type(value)
-                print "value", value, "argtype", argtype
                 if value is None:
                     continue
-                if argtype in (Vec, Position):
+                if argtype in (Position,):
                     argtype = "position"
                     value = value.dict()
                 elif argtype == np.ndarray:

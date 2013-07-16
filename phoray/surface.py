@@ -9,10 +9,10 @@ from numpy import (array, dot, cross, where, sqrt,
 
 #from numba import autojit
 
-from transformations import (rotation_matrix, angle_between_vectors,
-                             vector_norm)
-from ray import Ray, Rays
-from solver import quadratic
+from .transformations import (rotation_matrix, angle_between_vectors,
+                              vector_norm)
+from .ray import Ray, Rays
+from .solver import quadratic
 from . import Length
 
 
@@ -65,6 +65,8 @@ class Surface(object):
         else:
             normal = self.normal(P)
             dots = (r * normal).sum(axis=1) * 2.0
+            # Flip if backlit
+            dots = np.where(dots < 0, dots, -dots)
             refl = r - (normal.T * dots).T
             return Rays(P, refl, rays.wavelengths)
 
@@ -88,15 +90,16 @@ class Surface(object):
                 # VLS grating
                 d = line_spacing_function(P)
         n = self.normal(P)
-        print "n:", vector_norm(n[0])
         r_ref = refl.directions
+        # OK, this isn't great, but for now flip the normal if the
+        # ray is hitting the back of the element.
+        n = (n.T * np.sign((r_ref * n).sum(axis=1))).T
         g = self.grating_direction(P)
         a = cross(g, n)  # surface tangent
 
         alpha = angle_between_vectors(g, r_ref, axis=1)
         x = cos(alpha)
         y = sin(alpha)
-        print "x: %r, y: %r" % (x[0], y[0])
 
         phi = arccos((g * r_ref).sum(axis=1))  # dot product
         theta = arccos((n * r_ref).sum(axis=1) / sin(phi))
@@ -123,7 +126,6 @@ class Surface(object):
             theta_in = acos(dot(n, r))
             if sin(theta_in) == 0:
                 return ray
-            #print i1, i2, sin(theta_in)
             theta_out = asin((i1 / i2) * sin(theta_in))
             v = r % n
             r2 = dot(-n, rotation_matrix(theta_out, v)[:3, :3].T)
@@ -161,7 +163,7 @@ class Plane(Surface):
         # remove rays that are outside or backlighting
         # TODO: is it possible to somehow mask out these values earlier?
         q = where(((abs(px) <= self.xsize / 2) & (abs(py) <= self.ysize / 2) &
-                   (rz >= 0) & (t >= 0)),
+                   (t >= 0)),
                   p, nans)
         return q.T
 
@@ -171,12 +173,12 @@ class Plane(Surface):
         w = self.xsize
         h = self.ysize
         for i, x in enumerate(-w / 2 + d * w / res
-                               for d in xrange(res + 1)):
+                               for d in range(res + 1)):
             for j, y in enumerate(-h / 2 + d * h / res
-                                   for d in xrange(res + 1)):
+                                   for d in range(res + 1)):
                 verts.append((x, y, 0))
-        for i in xrange(res):
-            for j in xrange(res):
+        for i in range(res):
+            for j in range(res):
                 current = i * (res + 1) + j
                 faces.append((current, current + 1, current + 2 + res))
                 faces.append((current, current + 2 + res, current + 1 + res))
@@ -222,7 +224,6 @@ class Sphere(Surface):
                       a + np.min(t, axis=0) * r,
                       a + np.max(t, axis=0) * r)
         px, py, pz = p
-        print "px", px.shape
         halfxsize = self.xsize / 2
         halfysize = self.ysize / 2
         nans = np.empty((3, len(px)))
@@ -238,12 +239,12 @@ class Sphere(Surface):
         h = self.ysize
         sgn = copysign(1, self.R)
 
-        for x in (-w / 2 + d * w / res for d in xrange(res + 1)):
-            for y in (-h / 2 + d * h / res for d in xrange(res + 1)):
+        for x in (-w / 2 + d * w / res for d in range(res + 1)):
+            for y in (-h / 2 + d * h / res for d in range(res + 1)):
                 z = sgn * sqrt(self.R ** 2 - x ** 2 - y ** 2)
                 verts.append((x, y, z - self.R))
-        for i in xrange(res):
-            for j in xrange(res):
+        for i in range(res):
+            for j in range(res):
                 current = i * (res + 1) + j
                 faces.append((current, current + 1, current + 2 + res))
                 faces.append((current, current + 2 + res, current + 1 + res))
@@ -302,13 +303,13 @@ class Cylinder(Surface):
         w = self.xsize
         h = self.ysize
         sgn = copysign(1, self.R)
-        for x in (-w / 2 + d * w / res for d in xrange(res + 1)):
-            for y in (-h / 2 + d * h / res for d in xrange(res + 1)):
+        for x in (-w / 2 + d * w / res for d in range(res + 1)):
+            for y in (-h / 2 + d * h / res for d in range(res + 1)):
                 z = sgn * sqrt(self.R ** 2 - y ** 2)
                 verts.append((x, y, z - self.R))
 
-        for i in xrange(res):
-            for j in xrange(res):
+        for i in range(res):
+            for j in range(res):
                 current = i * (res + 1) + j
                 faces.append((current, current + 1, current + 2 + res))
                 faces.append((current, current + 2 + res, current + 1 + res))
@@ -370,13 +371,13 @@ class Ellipsoid(Surface):
         w, h = self.xsize, self.ysize
         a, b, c = self.a, self.b, self.c
         sgn = copysign(1, self.a * self.b * self.c)
-        for x in (-w / 2 + d * w / res for d in xrange(res + 1)):
-            for y in (-h / 2 + d * h / res for d in xrange(res + 1)):
+        for x in (-w / 2 + d * w / res for d in range(res + 1)):
+            for y in (-h / 2 + d * h / res for d in range(res + 1)):
                 z = sgn * sqrt((c ** 2) * (
                         1 - x ** 2 / a ** 2 - y ** 2 / b ** 2))
                 verts.append((x, y, z - c))
-        for i in xrange(res):
-            for j in xrange(res):
+        for i in range(res):
+            for j in range(res):
                 current = i * (res + 1) + j
                 faces.append((current, current + 1, current + 2 + res))
                 faces.append((current, current + 2 + res, current + 1 + res))
@@ -432,11 +433,11 @@ class Paraboloid(Surface):
         w = self.xsize
         h = self.ysize
         a, b, c = self.a, self.b, self.c
-        for x in (-w / 2 + d * w / res for d in xrange(res + 1)):
-            for y in (-h / 2 + d * h / res for d in xrange(res + 1)):
+        for x in (-w / 2 + d * w / res for d in range(res + 1)):
+            for y in (-h / 2 + d * h / res for d in range(res + 1)):
                 verts.append((x, y, c * (x ** 2 / a ** 2 + y ** 2 / b ** 2)))
-        for i in xrange(res):
-            for j in xrange(res):
+        for i in range(res):
+            for j in range(res):
                 current = i * (res + 1) + j
                 faces.append((current, current + 1, current + 2 + res))
                 faces.append((current, current + 2 + res, current + 1 + res))

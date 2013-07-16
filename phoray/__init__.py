@@ -9,7 +9,6 @@ def debug(*args):
 
 
 def Position(*args):
-    print "Position", args
     if len(args) == 1:
         if isinstance(args[0], dict):
             return array((args[0]["x"], args[0]["y"], args[0]["z"]))
