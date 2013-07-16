@@ -2,7 +2,7 @@ from __future__ import division
 from math import *
 from collections import defaultdict
 
-from numpy import array
+from numpy import array, NaN, empty
 
 from member import Member
 from surface import Surface
@@ -47,7 +47,9 @@ class Detector(Element):
 
     def _propagate(self, rays):
         p = self.geometry.intersect(rays)
-        return Rays(p, None, rays.wavelengths)
+        nans = empty((len(rays), 3))
+        nans[:] = (NaN, NaN, NaN)
+        return Rays(p, nans, rays.wavelengths)
 
 
 class Screen(Element):
