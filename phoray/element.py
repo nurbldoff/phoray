@@ -11,9 +11,9 @@ from .ray import Rays
 
 class Element(Member):
 
-    def __init__(self, geometry=Surface(), _footprint=True, *args, **kwargs):
+    def __init__(self, geometry:Surface, footprint=True, *args, **kwargs):
         self.geometry = geometry
-        self.save_footprint = _footprint
+        self.save_footprint = footprint
         self.footprint = defaultdict(list)
         Member.__init__(self, *args, **kwargs)
 
@@ -68,7 +68,7 @@ class ReflectiveGrating(Element):
 
     """A reflective grating diffracts incoming rays reflectively."""
 
-    def __init__(self, d=0., order=0, *args, **kwargs):
+    def __init__(self, d:float=0., order:int=0, *args, **kwargs):
         """
         Define a reflecting element with geometry shape given by s. If
         d>0 it will work as a grating with line spacing d and lines in
@@ -90,7 +90,7 @@ class ReflectiveVLSGrating(Mirror):
 
     """A grating with varying line spacing. Not complete."""
 
-    def __init__(self, an=1.0, *args, **kwargs):
+    def __init__(self, an:float=1.0, *args, **kwargs):
         self.an = an
         Mirror.__init__(self, *args, **kwargs)
 
@@ -125,7 +125,7 @@ class Glass(Element):
 
     """A glass surface, defined by the refraction indices on each side."""
 
-    def __init__(self, index1=1.0, index2=1.0, *args, **kwargs):
+    def __init__(self, index1:float=1.0, index2:float=1.0, *args, **kwargs):
         self.index1 = index1
         self.index2 = index2
         Element.__init__(self, *args, **kwargs)

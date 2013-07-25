@@ -3,6 +3,8 @@ from itertools import count
 from math import *
 
 from .member import Member
+from .element import Element
+from .source import Source
 from .ray import Ray
 
 
@@ -14,7 +16,7 @@ class OpticalSystem(Member):
     Ray can interact with, for example a mirror that can reflect it.
     """
 
-    def __init__(self, elements=[], sources=[], **kwargs):
+    def __init__(self, elements:[Element], sources:[Source], **kwargs):
 
         if elements is not None:
             self.elements = elements
@@ -30,11 +32,11 @@ class OpticalSystem(Member):
         Member.__init__(self, **kwargs)
 
     def add_source(self, source):
-        source._id = self.current_id.next()
+        source._id = next(self.current_id)
         self.sources.append(source)
 
     def add_element(self, element):
-        element._id = self.current_id.next()
+        element._id = next(self.current_id)
         self.elements.append(element)
 
     def update(self):
@@ -82,7 +84,7 @@ class OpticalSystem(Member):
             r = Ray(src.position, src.globalize_direction(src.axis),
                     src.wavelength)
             axis = []
-            for i in xrange(len(self.elements)):
+            for i in range(len(self.elements)):
                 if r is None:
                     break
                 axis.append(r.endpoint)
@@ -109,7 +111,7 @@ class Sequential(OpticalSystem):
         s = self.sources[source]
         r = Ray(s.position, s.axis, s.wavelength)  # Starting ray
         axis = [r]
-        for i in xrange(len(self.elements)):
+        for i in range(len(self.elements)):
             r = self.elements[i].propagate(r)
             axis.append(r)
         return axis

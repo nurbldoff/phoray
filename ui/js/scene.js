@@ -161,6 +161,7 @@ var view3d = (function () {
     };
 
     var color_from_string_times = function (s, factor) {
+        factor = factor || 1;
         var r = parseInt(s.slice(1, 3), 16),
             g = parseInt(s.slice(3, 5), 16),
             b = parseInt(s.slice(5, 7), 16);
@@ -182,8 +183,9 @@ var view3d = (function () {
                 }
                 var line = new THREE.Line(
                     geometry, new THREE.LineBasicMaterial( {
-                        color: color_from_string_times(colors[system], Math.random()),
-                        opacity: 0.05, linewidth: 1} ));
+                        //color: color_from_string_times(colors[system], Math.random()),
+                        color: color_from_string_times(colors[system]),
+                        opacity: 0.5, linewidth: 1} ));
                 this.traces.add(line);
             }.bind(this));
             tmpdata.failed.forEach( function (trace) {
@@ -196,11 +198,12 @@ var view3d = (function () {
                     geometry.vertices.push(position);
                 }
                 var line = new THREE.Line(
-                    geometry, new THREE.LineBasicMaterial( {
-                        color: color_from_string_times(colors[system], 0.5),
+                    geometry, new THREE.LineDashedMaterial( {
+                        //color: color_from_string_times(colors[system], 0.5),
+                        color: color_from_string_times(colors[system]),
                         dashSize: 0.2,
                         gapSize: 0.1,
-                        opacity: 0.05, linewidth: 1} ), THREE.LineStrip);
+                        opacity: 0.5, linewidth: 1} ), THREE.LineStrip);
                 this.traces.add(line);
             }.bind(this));
         }
@@ -367,17 +370,17 @@ var view3d = (function () {
     };
 
     this.Representation.prototype.update = function (args) {
-        var position = args.position, rotation = args.rotation,
-            offset = args.offset, alignment = args.alignment,
+        console.log("update repr", args);
+        var position = args.frames[0].args.position, rotation = args.frames[0].args.rotation,
             radians = Math.PI / 180;
         this.obj.position.set(position.x, position.y , position.z);
         this.obj.rotation.set(rotation.x * radians,
                               rotation.y * radians,
                               rotation.z * radians);
-        this.mesh.position.set(offset.x, offset.y, offset.z);
-        this.mesh.rotation.set(alignment.x* radians,
-                               alignment.y * radians,
-                               alignment.z * radians);
+        // this.mesh.position.set(offset.x, offset.y, offset.z);
+        // this.mesh.rotation.set(alignment.x* radians,
+        //                        alignment.y * radians,
+        //                        alignment.z * radians);
         this.view.render();
     };
 

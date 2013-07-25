@@ -86,7 +86,7 @@
             </div>
 
             <div class="attrib">
-              <div class="grid-4 label">type</div>
+              <div class="grid-4 label underline">type</div>
               <select class="grid-8" data-bind="value: type, options: get_types()"></select>
             </div>
 
@@ -135,7 +135,7 @@
             </div>
 
             <div class="attrib">
-              <div class="grid-4 label"> type </div>
+              <div class="grid-4 label underline"> type </div>
               <select class="grid-8" data-bind="value: type, options: get_types()"></select>
             </div>
 
@@ -178,7 +178,7 @@
             </div>
 
             <div class="attrib">
-              <div class="grid-4 label"> type </div>
+              <div class="grid-4 label underline"> type </div>
               <select class="grid-8" data-bind="value: type, options: get_types()"></select>
             </div>
 
@@ -206,38 +206,38 @@
 
   <!-- TEMPLATES -->
 
-  <script type="text/html" id="property-string">
-    <div class="grid-6 label" data-bind="text: name"> </div>
+  <script type="text/html" id="property-str">
+    <div class="grid-6 label underline" data-bind="text: name"> </div>
     <input class="grid-6" type="text" data-bind="value: value"/>
   </script>
 
-  <script type="text/html" id="property-number">
-    <div class="grid-6 label" data-bind="text: name"> </div>
+  <script type="text/html" id="property-float">
+    <div class="grid-6 label underline" data-bind="text: name"> </div>
     <input class="grid-6" data-bind="value: value.forceNumeric(),
                                      valueUpdate: 'afterkeydown'"/>
   </script>
 
-  <script type="text/html" id="property-integer">
-    <div class="grid-6 label" data-bind="text: name"> </div>
+  <script type="text/html" id="property-int">
+    <div class="grid-6 label underline" data-bind="text: name"> </div>
     <input class="grid-6" type="number" data-bind="value: value.forceInteger(),
                                                    valueUpdate: 'afterkeydown'">
   </script>
 
-  <script type="text/html" id="property-length">
-    <div class="grid-6 label" data-bind="text: name"> </div>
+  <script type="text/html" id="property-Length">
+    <div class="grid-6 label underline" data-bind="text: name"> </div>
     <input class="grid-6" type="number" data-bind="value: value.forceNonZero(),
                                                    valueUpdate: 'afterkeydown'">
 
   </script>
 
   <script type="text/html" id="property-angle">
-      <div class="grid-6 label" data-bind="text: name"> </div>
+      <div class="grid-6 label underline" data-bind="text: name"> </div>
       <input class="grid-6" type="number" data-bind="value: value.forceNumeric(),
                                                      valueUpdate: 'afterkeydown'">
   </script>
 
-  <script type="text/html" id="property-position">
-    <div class="grid-12 label" data-bind="text: name"> </div>
+  <script type="text/html" id="property-vector">
+    <div class="grid-12 label underline" data-bind="text: name"> </div>
 
     <div class="attrib">
       <div class="grid-1 to-right"> x: </div>
@@ -255,14 +255,37 @@
     </div>
   </script>
 
-  <script type="text/html" id="property-geometry">
-    <div>
-      <div class="grid-12 label">geometry:</div>
 
-      <div class="attrib">
-        <div class="subsection">
+  <script type="text/html" id="property-list">
+    <div class="grid-11 label underline" data-bind="text: name"> </div>
+    <button class="grid-1" data-bind="click: $root['add_' +
+                                      $parents[1].get_schema(name).subtype.toLowerCase()]">+</button>
+    <div data-bind="foreach: value" class="list">
+      <div class="item">
+
+        <div class="attrib">
+          <div class="grid-4 label underline"> type </div>
+          <select class="grid-8" data-bind="value: type, options: get_types()"></select>
+        </div>
+
+        <!-- ko foreach: get_properties() -->
+        <div data-bind="template: {name: 'property-' + $parent.get_schema($data).type,
+                        data: {name: $data, value: $parent.args[$data]}}" class="attrib">
+        </div>
+        <!-- /ko -->
+      </div>
+    </div>
+  </script>
+
+
+  <script type="text/html" id="property-Surface">
+    <div>
+      <div class="grid-12 label underline"> geometry </div>
+
+      <div class="subsection">
+        <div class="geometry">
           <div class="attrib">
-            <div class="grid-4 label"> type: </div>
+            <div class="grid-4 label underline"> type </div>
             <select class="grid-8"
                     data-bind="value: value.type, options: value.get_types()"></select>
           </div>

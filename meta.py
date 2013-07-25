@@ -5,7 +5,7 @@ from imp import find_module, load_module
 from operator import itemgetter
 from collections import OrderedDict
 
-from phoray import system, element, surface, source
+from phoray import system, element, surface, source, member
 import util
 
 
@@ -32,7 +32,8 @@ def get_classes(module, baseclass):
 classes = dict(System=get_classes(system, system.OpticalSystem),
                Element=get_classes(element, element.Element),
                Surface=get_classes(surface, surface.Surface),
-               Source=get_classes(source, source.Source))
+               Source=get_classes(source, source.Source),
+               Frame=dict(Frame=member.Frame))
 
 schemas = dict((id(cls), util.signature(cls))
                for _, clss in classes.items()
@@ -48,6 +49,8 @@ def create_system(spec={}):
                         for elspec in args.get("elements", [])]
     args["sources"] = [create_source(srcspec)
                        for srcspec in args.get("sources", [])]
+    args["frames"] = [create_frame(framespec)
+                      for framespec in args.get("frames", [])]
     pprint(args)
     system = cls(_id=spec.get("_id"), **args)
     return system
@@ -65,13 +68,24 @@ def create_element(spec={}):
     cls = classes["Element"][spec.get("type", "Mirror")]
     args = spec.get("args", {})
     geo = create_geometry(args.get("geometry", {}))
+    args["frames"] = [create_frame(framespec) for framespec in args.get(
+            "frames", [dict(args=dict(position=(0, 0, 0),
+                                      rotation=(0, 0, 0)))])]
     args["geometry"] = geo
     element = cls(_id=spec.get("_id"), **args)
     return element
 
 
+def create_frame(spec={}):
+    return member.Frame(**spec.get("args", {}))
+
+
 def create_source(spec={}):
     """Create a Source instance from specifications."""
     cls = classes["Source"].get(spec.get("type", "GaussianSource"))
-    source = cls(_id=spec.get("_id"), **spec.get("args", {}))
+    args = spec.get("args", {})
+    args["frames"] = [create_frame(framespec) for framespec in args.get(
+            "frames", [dict(args=dict(position=(0, 0, 0),
+                                      rotation=(0, 0, 0)))])]
+    source = cls(_id=spec.get("_id"), **args)
     return source

@@ -17,9 +17,13 @@ class Frame(object):
     Contains methods to convert from and to the local coordinate system.
     """
 
-    def __init__(self, position=Position(0, 0, 0), rotation=Position(0, 0, 0)):
+    def __init__(self, position:Position=(0, 0, 0), rotation:Position=(0, 0, 0)):
         self.position = Position(position)
         self.rotation = Position(rotation)
+
+        # Precalculate some matrices. Note that this means that the
+        # frame can't be changed after creation, unless
+        # calculate_matrices is called again afterwards.
         self.calculate_matrices()
 
     def calculate_matrices(self):
@@ -58,18 +62,14 @@ class Member(object):
 
     """Baseclass for a generalized member of an optical system."""
 
-    def __init__(self, _id=None, frames=None):
+    def __init__(self, _id=None, frames:[Frame]=None):
 
         if _id is None:
             self._id = next(current_id)
         else:
             self._id = _id
 
-        self.frames = frames
-
-        # Precalculate some matrices. Note that this means that the
-        # member can't be moved after creation, unless precalc is
-        # called again afterwards.
+        self.frames = frames or []
 
     def localize(self, rays):
         """

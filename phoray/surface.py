@@ -1,13 +1,9 @@
-# cython: profile=True
-
 from __future__ import division
 from math import *
 
 import numpy as np
 from numpy import (array, dot, cross, where, sqrt,
                    cos, sin, arccos, arcsin)
-
-#from numba import autojit
 
 from .transformations import (rotation_matrix, angle_between_vectors,
                               vector_norm)
@@ -22,7 +18,7 @@ class Surface(object):
     Should not be instantiated but serves as a base class to be inherited.
     """
 
-    def __init__(self, xsize=Length(1.0), ysize=Length(1.0)):
+    def __init__(self, xsize:Length=1.0, ysize:Length=1.0):
         self.xsize, self.ysize = xsize, ysize
 
     def intersect(self, r):
@@ -173,9 +169,9 @@ class Plane(Surface):
         w = self.xsize
         h = self.ysize
         for i, x in enumerate(-w / 2 + d * w / res
-                               for d in range(res + 1)):
+                              for d in range(res + 1)):
             for j, y in enumerate(-h / 2 + d * h / res
-                                   for d in range(res + 1)):
+                                  for d in range(res + 1)):
                 verts.append((x, y, 0))
         for i in range(res):
             for j in range(res):
@@ -191,7 +187,7 @@ class Sphere(Surface):
     and if R < 0 it is the 'bottom' half (z < 0).
     """
 
-    def __init__(self, R=Length(1), *args, **kwargs):
+    def __init__(self, R:Length=1, *args, **kwargs):
         self.R = R
         self.offset = array((0, 0, self.R))
         if "xsize" in kwargs:
@@ -253,7 +249,7 @@ class Sphere(Surface):
 
 class Cylinder(Surface):
 
-    def __init__(self, R=Length(1.0), *args, **kwargs):
+    def __init__(self, R:Length=1.0, *args, **kwargs):
         self.R = R
         self.offset = array((0, 0, R))
         if "ysize" in kwargs:
@@ -318,7 +314,7 @@ class Cylinder(Surface):
 
 class Ellipsoid(Surface):
 
-    def __init__(self, a=Length(1.0), b=Length(1.0), c=Length(1.0),
+    def __init__(self, a:Length=1.0, b:Length=1.0, c:Length=1.0,
                  *args, **kwargs):
         self.a, self.b, self.c = a, b, c
         self.offset = array((0, 0, c))
@@ -389,7 +385,7 @@ class Paraboloid(Surface):
     A paraboloid (rotated parabola) described by z/c = (x/a)^2 + (y/b)^2
     """
 
-    def __init__(self, a=Length(1.0), b=Length(1.0), c=Length(1.0),
+    def __init__(self, a:Length=1.0, b:Length=1.0, c:Length=1.0,
                  *args, **kwargs):
         self.a = a
         self.b = b

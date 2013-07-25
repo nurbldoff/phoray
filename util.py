@@ -4,7 +4,7 @@ from pprint import pprint
 
 import numpy as np
 
-from phoray import surface, element, source
+from phoray import surface, element, source, member
 from phoray import Length, Position, Rotation
 
 
@@ -90,38 +90,32 @@ def signature(cls):
     TODO: This is horrible.
     """
 
-    signature = OrderedDict()
+    sig = OrderedDict()
     bases = inspect.getmro(cls)
     for base in (bases[:-1]):  # skip the object class
-        spec = inspect.getargspec(base.__init__)
-        if len(spec.args[1:]) != len(spec.defaults):
-            print("The init function for %s is missing default arguments!" %
-                  cls.__name__)
-            return None
-        for i, arg in enumerate(spec.args[1:]):
+        spec = base.__init__.__annotations__
+        print("spec", spec)
+        # if len(spec.args[1:]) != len(spec.defaults):
+        #     print("The init function for %s is missing default arguments!" %
+        #           cls.__name__)
+        #     return None
+        for arg, annot in spec.items():
+            argsubtype = None
+            argtype = annot
             if not arg.startswith("_"):
-                value = spec.defaults[i]
-                argtype = type(value)
-                if value is None:
-                    continue
-                if argtype in (Position,):
-                    argtype = "position"
-                    value = value.dict()
-                elif argtype == np.ndarray:
-                    argtype = "position"
-                    value = dict(x=float(value[0]), y=float(value[1]), z=float(value[2]))
-                elif argtype == surface.Surface:
-                    argtype = "geometry"
-                    value = None
-                elif argtype == Length:
-                    argtype = "length"
-                elif argtype == int:
-                    argtype = "integer"
-                elif argtype == float:
-                    argtype = "number"
-                elif argtype == str:
-                    argtype = "string"
-                elif argtype == list:
+                if argtype in (Position, np.ndarray, tuple):
+                    argtype = "vector"
+                elif type(argtype) == list:
+                    if len(argtype) > 0:
+                        argsubtype = argtype[0].__name__
                     argtype = "list"
-                signature[arg] = dict(type=str(argtype), value=value)
-    return signature
+                else:
+                    argtype = argtype.__name__
+                sig[arg] = dict(type=str(argtype))
+                if argsubtype:
+                    sig[arg]["subtype"] = argsubtype
+    print()
+    print("signature", cls.__name__)
+    pprint(sig)
+    print()
+    return sig

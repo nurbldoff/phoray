@@ -27,26 +27,31 @@
 
 
     // Abstract representation of an item, for inheriting
-    function Item() {
+    function Item(data) {
 
         var self = this;
 
         self.update = function (type) {
-            var data = {system: {type: type}};
             $.get("/create?what=" + self.kind, {}, function (data) {
                 ko.mapping.fromJS(data, self);
             });
         };
 
+        self.mapping = {
+            args: {
+                create: function (options) {
+                    console.log("create Arguments");
+                    return new Arguments(options.data);
+                }
+            }
+        };
+
+        ko.mapping.fromJS(data, self.mapping, self);
+
         // If the type of the item is changed, we need to regenerate from schema
         self.type.subscribe(function (type) {
             var data = create(schemas, self.kind, type, ko.mapping.toJS(self));
-            for (var prop in self.args) {
-                if (!(prop in data.args)) {
-                    delete self.args[prop];
-                }
-            }
-            ko.mapping.fromJS(data, self);
+            self.args = new Arguments(data.args);
         });
     };
 
@@ -56,32 +61,41 @@
 
     Item.prototype.get_properties = function () {
         var schema = schemas[this.kind][this.type()];
-        var properties = ko.utils.arrayFilter(Object.keys(schema), function(item) {
-            return schema[item].type != "list";
-        });
-        return properties;
+        // var properties = ko.utils.arrayFilter(Object.keys(schema), function(item) {
+        //     return schema[item].type != "list";
+        // });
+        // return properties;
+        return Object.keys(schema);
     };
 
     Item.prototype.get_schema = function (prop) {
+        //console.log("get schema", prop, schemas[this.kind][this.type()][prop]);
         return schemas[this.kind][this.type()][prop];
     };
 
 
-    // An set of arguments
+    // A set of arguments.
+    // The properties that defines an item.
     function Arguments(data) {
 
         var self = this;
 
         var mapping = {
+            frames: {
+                key: function(data) {
+                    return ko.utils.unwrapObservable(data._id);
+                },
+                create: function(options) {
+                    console.log("create Frame");
+                    return new Frame(options.data);
+                }
+            },
             elements: {
                 key: function(data) {
                     return ko.utils.unwrapObservable(data._id);
                 },
                 create: function (options) {
                     return new Element(options.data);
-                },
-                delete: function (options) {
-
                 }
             },
             sources: {
@@ -99,7 +113,7 @@
                 },
                 create: function (options) {
                     console.log("geometry data", options.data);
-                    return geometry = new Geometry(options.data);
+                    return new Geometry(options.data);
                 }
             }
         };
@@ -108,16 +122,28 @@
     }
 
 
-    // A geometry item
+    // A reference frame.
+    // Used to position things in space.
+    function Frame(data) {
+
+        var self = this;
+        self.kind = "Frame";
+
+        Item.call(self, data);
+
+    };
+    Frame.prototype = Object.create(Item.prototype);
+
+
+    // A geometry item.
+    // Used to represent an item graphically.
     function Geometry(data) {
 
         var self = this;
         self.kind = "Surface";
         self.mesh = ko.observable();
 
-        ko.mapping.fromJS(data, {}, self);
-
-        Item.call(self);
+        Item.call(self, data);
 
         // Update the mesh if properties change
         self.get_mesh = ko.computed( function () {
@@ -141,12 +167,13 @@
         var mapping = {
             args: {
                 create: function (options) {
+                    console.log("arguments");
                     return new Arguments(options.data);
                 }
             }
         };
-        ko.mapping.fromJS(data, mapping, self);
-        Item.call(self);
+
+        Item.call(self, data);
 
         // 3d representation
         self.repr = new view3d.Representation(view, null, ko.mapping.toJS(self.args));
@@ -174,9 +201,8 @@
         var self = this;
         self.kind = "Source";
 
-        ko.mapping.fromJS(data, {}, self);
+        Item.call(self, data);
 
-        Item.call(self);
     };
 
     Source.prototype = Object.create(Item.prototype);
@@ -188,18 +214,25 @@
         var self = this;
         self.kind = "System";
 
-        var mapping = {
-            args: {
-                create: function (options) {
-                    console.log("create Arguments");
-                    return new Arguments(options.data);
-                }
-            }
+        // var mapping = {
+        //     args: {
+        //         create: function (options) {
+        //             console.log("create Arguments");
+        //             return new Arguments(options.data);
+        //         }
+        //     }
+        // };
+
+        Item.call(self, data);
+
+        self.add_pelement = function () {
+            console.log("add element");
+            var data = {type: "Mirror"};
+            $.get("/create?base=Element", data, function (data) {
+                var element = new Element(data);
+                self.args.elements.push(element);
+            });
         };
-
-        ko.mapping.fromJS(data, mapping, self);
-
-        Item.call(self);
     };
 
     OpticalSystem.prototype = Object.create(Item.prototype);
@@ -260,7 +293,9 @@
         // If the server already has a system defined, let's use it
         $.get("/system",
               function (data) {
-                  ko.mapping.fromJS(data, self.mapping, self);
+                  console.log("data", data);
+                  ko.mapping.fromJS(data, mapping, self);
+                  console.log("hej");
                   // Start listening for any changes in the model, and
                   // if they happen, send everything to the server.
                   self.listener = ko.pauseableComputed(function () {
@@ -408,8 +443,9 @@
         // sometimes either an Element or a Source.
 
         self.add_system = function () {
-            var data = {system: {type: "Free"}};
-            $.get("/create?what=system", {}, function (data) {
+            var data = {type: "Free"};
+            $.get("/create?base=System", {}, function (data) {
+                console.log("create_system", data);
                 var system = new OpticalSystem(data);
                 console.log("created system", system);
                 self.systems.push(system);
@@ -418,8 +454,8 @@
         };
 
         self.add_element = function () {
-            var data = {system: {type: "Free"}};
-            $.get("/create?what=element", data, function (data) {
+            var data = {type: "Mirror"};
+            $.get("/create?base=Element", data, function (data) {
                 var element = new Element(data);
                 self.selected_system().args.elements.push(element);
                 self.select_element(element);
@@ -427,8 +463,8 @@
         };
 
         self.add_source = function () {
-            var data = {system: {type: "GaussianSource"}};
-            $.get("/create?what=source", data, function (data) {
+            var data = {type: "GaussianSource"};
+            $.get("/create?base=Source", data, function (data) {
                 var source = new Source(data);
                 self.selected_system().args.sources.push(source);
                 self.select_source(source);

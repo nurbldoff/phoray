@@ -7,7 +7,7 @@ from numpy import isnan
 from bottle import get, post, request, run, static_file, route
 
 from meta import (classes, schemas, create_system, create_element,
-                  create_source, create_geometry)
+                  create_source, create_geometry, create_frame)
 import util
 
 
@@ -59,14 +59,21 @@ def get_system():
 @get('/create')
 def create():
     query = request.query
-    kind = query.what.lower()
-    if kind == "system":
+    print(dict(query))
+
+    if query.base == "System":
         what = create_system(query)
-    elif kind == "element":
+    elif query.base == "Element":
         what = create_element(query)
-    elif kind == "source":
+    elif query.base == "Source":
         what = create_source(query)
-    return util.object_to_dict(what, schemas)
+    elif query.base == "Surface":
+        what = create_geometry(query)
+    elif query.base == "Frame":
+        what = create_frame(query)
+    result = util.object_to_dict(what, schemas)
+    pprint(result)
+    return result
 
 
 @get('/mesh')
@@ -97,7 +104,7 @@ def trace():
         succeeded = []
         failed = []
         tmp = dict(succeeded=succeeded, failed=failed)
-        for i in xrange(n):
+        for i in range(n):
             tmp2 = []
             for j, tr in enumerate(trace):
                 broke = False

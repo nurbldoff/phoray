@@ -5,7 +5,7 @@ from numpy import array, ones, zeros, random
 
 from .member import Member
 from .ray import Rays
-from . import Rotation, Position
+from . import Rotation, Position, Length
 
 
 class Source(Member):
@@ -13,7 +13,7 @@ class Source(Member):
     "Source base class"
 
     def __init__(self,
-                 wavelength=0.0, color="#ffffff", *args, **kwargs):
+                 wavelength:Length=0.0, color:str="#ffffff", *args, **kwargs):
 
         Member.__init__(self, *args, **kwargs)
         self.wavelength = wavelength
@@ -34,7 +34,7 @@ class TrivialSource(Source):
     def generate(self, n=1):
         endpoints = zeros((n, 3))
         directions = ones((n, 3)) * self.axis
-        rays = Rays(endpoints, directions)
+        rays = Rays(endpoints, directions, zeros(n))
         return self.globalize(rays)
 
 
@@ -46,9 +46,9 @@ class GaussianSource(Source):
     FIXME: the divergence is only correct for small angles.
     """
 
-    def __init__(self, size=Position(0, 0, 0),
-                 divergence=Position(0, 0, 0),
-                 random_seed=randint(0, maxsize),
+    def __init__(self, size:Position=(0, 0, 0),
+                 divergence:Position=(0, 0, 0),
+                 random_seed:int=randint(0, maxsize),
                  *args, **kwargs):
         self.size = Position(size)
         self.divergence = Position(divergence)
