@@ -5,7 +5,7 @@ from phoray.ray import Rays
 from . import PhorayTestCase
 
 
-A, B, C, D, E, F, G, H, I = [uniform(-0.5, 0.5) for _ in xrange(9)]
+A, B, C, D, E, F, G, H, I = [uniform(-0.5, 0.5) for _ in range(9)]
 
 
 class FrameTestCase(PhorayTestCase):
@@ -15,7 +15,6 @@ class FrameTestCase(PhorayTestCase):
         dv = (D, E, F)
         frame = Frame(position=dv)
         v2 = frame.localize_position(v1)
-        print v1, v2
         self.assertAllClose(v1[0], v2[0] + dv)
 
     def test_localize_position_rotation(self):

@@ -9,7 +9,7 @@ from phoray.ray import Rays
 from . import PhorayTestCase
 
 
-A, B, C = [uniform(-0.5, 0.5) for _ in xrange(3)]
+A, B, C = [uniform(-0.5, 0.5) for _ in range(3)]
 
 
 class PlaneSurfaceTestCase(PhorayTestCase):
