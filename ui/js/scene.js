@@ -43,8 +43,6 @@ var view3d = (function () {
 
     function setup_input(view, element) {
 
-        element.on
-
         element.onmousedown = function (event) {
             event.preventDefault();
 
@@ -170,42 +168,55 @@ var view3d = (function () {
 
     this.View.prototype.draw_traces = function (data, colors) {
         console.log("draw_trace");
-        for (var system in data) {
-            var tmpdata = data[system];
-            tmpdata.succeeded.forEach( function (trace) {
-                var geometry = new THREE.Geometry();
-                for ( var i=0; i<trace.length; i++ ) {
-                    if (trace[i][0] === NaN)
+
+	var system, tmpdata, start, end, geometry, trace, line, i, j;
+
+        for (system in data) {
+            tmpdata = data[system];
+
+	    // Draw succeeded rays
+            geometry = new THREE.Geometry();
+	    for (i=0; i < tmpdata.succeeded.length; i++) {
+		trace = tmpdata.succeeded[i];
+                for (j=0; j<trace.length-1; j++ ) {
+                    if (trace[j][0] === NaN)
                         break;
-                    var position = new THREE.Vector3(
-                        trace[i][0], trace[i][1], trace[i][2]);
-                    geometry.vertices.push(position);
+                    start = new THREE.Vector3(
+                        trace[j][0], trace[j][1], trace[j][2]),
+                    geometry.vertices.push(start);
+		    end = new THREE.Vector3(
+                        trace[j+1][0], trace[j+1][1], trace[j+1][2]);
+                    geometry.vertices.push(end);
                 }
-                var line = new THREE.Line(
-                    geometry, new THREE.LineBasicMaterial( {
-                        //color: color_from_string_times(colors[system], Math.random()),
-                        color: color_from_string_times(colors[system]),
-                        opacity: 0.5, linewidth: 1} ));
-                this.traces.add(line);
-            }.bind(this));
-            tmpdata.failed.forEach( function (trace) {
-                var geometry = new THREE.Geometry();
-                for ( var i=0; i<trace.length; i++ ) {
-                    if (trace[i][0] === NaN)
+            }
+            line = new THREE.Line(
+                geometry, new THREE.LineBasicMaterial( {
+                    //color: color_from_string_times(colors[system], Math.random()),
+                    color: color_from_string_times(colors[system]),
+                    opacity: 0.5, linewidth: 1} ), THREE.LinePieces);
+            this.traces.add(line);
+
+	    // Draw failed rays
+            geometry = new THREE.Geometry();
+	    for (i=0; i < tmpdata.failed.length; i++) {
+		trace = tmpdata.failed[i];
+                for (j=0; j<trace.length - 1; j++ ) {
+                    if (trace[j][0] === NaN)
                         break;
-                    var position = new THREE.Vector3(
-                        trace[i][0], trace[i][1], trace[i][2]);
-                    geometry.vertices.push(position);
+                    start = new THREE.Vector3(
+                        trace[j][0], trace[j][1], trace[j][2]);
+                    geometry.vertices.push(start);
+                    end = new THREE.Vector3(
+                        trace[j+1][0], trace[j+1][1], trace[j+1][2]);
+                    geometry.vertices.push(end);
                 }
-                var line = new THREE.Line(
-                    geometry, new THREE.LineDashedMaterial( {
-                        //color: color_from_string_times(colors[system], 0.5),
-                        color: color_from_string_times(colors[system]),
-                        dashSize: 0.2,
-                        gapSize: 0.1,
-                        opacity: 0.5, linewidth: 1} ), THREE.LineStrip);
-                this.traces.add(line);
-            }.bind(this));
+	    }
+            line = new THREE.Line(
+                geometry, new THREE.LineDashedMaterial( {
+                    color: color_from_string_times(colors[system]),
+                    dashSize: 1,
+                    gapSize: 0.5} ), THREE.LinePieces);
+            this.traces.add(line);
         }
         this.render();
     };
@@ -347,8 +358,11 @@ var view3d = (function () {
 
     // A representation of an item
     this.Representation = function (view, meshdata, args) {
+	var self = this;
+
         this.view = view;
-        this.obj = new THREE.Object3D();
+        //this.frames = [];
+	this.obj = new THREE.Object3D();
         //this.obj.add(make_axis());
         view.scene.add(this.obj);
         this.selection = new Selection(view, this);
@@ -371,8 +385,18 @@ var view3d = (function () {
 
     this.Representation.prototype.update = function (args) {
         console.log("update repr", args);
-        var position = args.frames[0].args.position, rotation = args.frames[0].args.rotation,
+        // var position = args.frames[0].args.position, rotation = args.frames[0].args.rotation,
+	var position = {x: 0, y: 0, z: 0}, rotation = {x: 0, y: 0, z: 0},
             radians = Math.PI / 180;
+	for (var i=args.frames.length-1; i>=0; i--) {
+	    position.x += args.frames[i].args.position.x;
+	    position.y += args.frames[i].args.position.y;
+	    position.z += args.frames[i].args.position.z;
+
+	    rotation.x += args.frames[i].args.rotation.x;
+	    rotation.y += args.frames[i].args.rotation.y;
+	    rotation.z += args.frames[i].args.rotation.z;
+	}
         this.obj.position.set(position.x, position.y , position.z);
         this.obj.rotation.set(rotation.x * radians,
                               rotation.y * radians,
