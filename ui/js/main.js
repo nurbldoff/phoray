@@ -95,7 +95,7 @@
                     return ko.utils.unwrapObservable(data._id);
                 },
                 create: function (options) {
-                    return new Element(options.data);
+		    return new Element(options.data);
                 }
             },
             sources: {
@@ -241,6 +241,8 @@
     // Main model, a collection of optical systems
     var MainViewModel = function () {
         var self = this;
+
+	self.bases = {"System": OpticalSystem, "Source": Source, "Element": Element, "Frame": Frame};
 
         // these are 'internal' properties keeping track of selections
         self.selected_system = ko.observable(null);
@@ -444,6 +446,7 @@
 
         self.add_system = function () {
             var data = {type: "Free"};
+	    console.log("create_system");
             $.get("/create?base=System", {}, function (data) {
                 console.log("create_system", data);
                 var system = new OpticalSystem(data);
@@ -453,23 +456,34 @@
             });
         };
 
-        self.add_element = function () {
+        self.add_element = function (l) {
             var data = {type: "Mirror"};
             $.get("/create?base=Element", data, function (data) {
+		console.log("add element", data);
                 var element = new Element(data);
-                self.selected_system().args.elements.push(element);
+                l.value.push(element);
                 self.select_element(element);
             });
         };
 
-        self.add_source = function () {
+        self.add_source = function (l) {
             var data = {type: "GaussianSource"};
             $.get("/create?base=Source", data, function (data) {
                 var source = new Source(data);
-                self.selected_system().args.sources.push(source);
+                l.value.push(source);
                 self.select_source(source);
             });
         };
+
+        self.add_frame = function (l) {
+	    console.log("list", l);
+            $.get("/create?base=Frame", {}, function (data) {
+		console.log("frame", data);
+                var frame = new Frame(data);
+		l.value.push(frame);
+            });
+        };
+
 
         self.clone_element = function () {
             var original = ko.mapping.toJS(self.selected_element()),

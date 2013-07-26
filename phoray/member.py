@@ -17,9 +17,15 @@ class Frame(object):
     Contains methods to convert from and to the local coordinate system.
     """
 
-    def __init__(self, position:Position=(0, 0, 0), rotation:Position=(0, 0, 0)):
+    def __init__(self, position:Position=(0, 0, 0), rotation:Position=(0, 0, 0),
+                 _id=None):
         self.position = Position(position)
         self.rotation = Position(rotation)
+
+        if _id is None:
+            self._id = next(current_id)
+        else:
+            self._id = _id
 
         # Precalculate some matrices. Note that this means that the
         # frame can't be changed after creation, unless

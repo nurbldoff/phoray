@@ -77,7 +77,7 @@ def create_element(spec={}):
 
 
 def create_frame(spec={}):
-    return member.Frame(**spec.get("args", {}))
+    return member.Frame(_id=spec.get("_id"), **spec.get("args", {}))
 
 
 def create_source(spec={}):
