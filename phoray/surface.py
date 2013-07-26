@@ -62,7 +62,7 @@ class Surface(object):
             normal = self.normal(P)
             dots = (r * normal).sum(axis=1) * 2.0
             # Flip if backlit
-            dots = np.where(dots < 0, dots, -dots)
+            #dots = np.where(dots > 0, dots, -dots)
             refl = r - (normal.T * dots).T
             return Rays(P, refl, rays.wavelengths)
 
