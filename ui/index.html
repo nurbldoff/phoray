@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="static/css/app.css">
 </head>
 
-<body>
+<body oncontextmenu="return false;">
 
   <div id="sidebar">
 
@@ -259,7 +259,7 @@
   <script type="text/html" id="property-list">
     <div class="grid-11 label underline" data-bind="text: name"> </div>
     <button class="grid-1" data-bind="click: $root['add_' +
-                                      $parents[1].get_schema(name).subtype.toLowerCase()]">+</button>
+				      $parents[1].get_schema(name).subtype.toLowerCase()]">+</button>
     <div data-bind="foreach: value" class="list">
       <div class="item">
 

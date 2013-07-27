@@ -52,24 +52,34 @@ var view3d = (function () {
             view.start_theta = view.theta;
             view.start_phi = view.phi;
 
-            view.mouse_down = true;
+	    if (event.button == 0)
+		element.onmousemove = mousemove_rotate;
+	    else if (event.button)
+		element.onmousemove = mousemove_pan;
         };
 
         element.onmouseup = element.onmouseout = function ( event ) {
-            view.mouse_down = false;
+	    element.onmousemove = null;
+            view.left_mouse_down = view.right_mouse_down = false;
         };
 
-        element.onmousemove = function ( event ) {
-
+        var mousemove_rotate = function ( event ) {
 	    event.preventDefault();
-
-            if (view.mouse_down) {
-	        view.mouse_pos = {x: ( event.clientX / element.offsetWidth ) * 2 - 1,
-	                     y: ( event.clientY / element.offsetHeight ) * 2 + 1};
-                view.render();
-            }
-
+	    view.mouse_pos = {x: ( event.clientX / element.offsetWidth ) * 2 - 1,
+			      y: ( event.clientY / element.offsetHeight ) * 2 + 1};
+	    view.rotate();
+            view.render();
         };
+
+        var mousemove_pan = function ( event ) {
+	    event.preventDefault();
+	    view.mouse_pos = {x: ( event.clientX / element.offsetWidth ) * 2 - 1,
+			      y: ( event.clientY / element.offsetHeight ) * 2 + 1};
+	    view.pan();
+            view.render();
+        };
+
+
         // helper for mousewheel events
         function hookEvent(element, eventName, callback)
         {
@@ -96,6 +106,7 @@ var view3d = (function () {
             } else {
                 view.scale /= 1.1;
             }
+	    view.rotate();
             view.render();
         });
     }
@@ -113,7 +124,7 @@ var view3d = (function () {
             // backend doesn't work. Needs testing and probably some tweaking, though.
 
         } else {
-            this.renderer = new THREE.WebGLRenderer({antialias: true});
+            this.renderer = new THREE.WebGLRenderer({antialias: true, clearAlpha: 1, clearColor: 0x3f3f3f});
             this.renderer.autoClear = false;
             //this.renderer = new THREE.CanvasRenderer({antialias: false});
 
@@ -126,7 +137,9 @@ var view3d = (function () {
             this.start_phi = this.phi;
             this.mouse_start = {x: 0, y: 0};
             this.mouse_pos= {x: 0, y: 0};
-            this.mouse_down = false;
+            this.last_mouse_pos= {x: 0, y: 0};
+            this.left_mouse_down = false;
+            this.right_mouse_down = false;
             this.scale = 1;
 
             element.parentNode.replaceChild(this.renderer.domElement, element);
@@ -140,10 +153,13 @@ var view3d = (function () {
             this.camera = new THREE.OrthographicAspectCamera(
                 20, view_width / view_height, 0.1, 10000
             );
+	    this.camera_offset = {x: 0, y: 0, z: 0};
 
             setup_lights(this.scene);
             setup_grid(this.scene);
             setup_input(this, element);
+
+	    this.render();
         }
     };
 
@@ -199,7 +215,7 @@ var view3d = (function () {
                 geometry, new THREE.LineBasicMaterial( {
                     //color: color_from_string_times(colors[system], Math.random()),
                     color: color_from_string_times(colors[system]),
-                    opacity: 0.5, linewidth: 1} ), THREE.LinePieces);
+                    opacity: 0.1, linewidth: .001} ), THREE.LinePieces);
             this.traces.add(line);
 
 	    // Draw failed rays
@@ -222,26 +238,46 @@ var view3d = (function () {
             line = new THREE.Line(
                 geometry, new THREE.LineDashedMaterial( {
                     color: color_from_string_times(colors[system]),
-                    dashSize: 1,
-                    gapSize: 0.5} ), THREE.LinePieces);
+                    dashSize: 0.1,
+                    gapSize: 0.05} ), THREE.LinePieces);
+	    geometry.computeLineDistances();
             this.traces.add(line);
         }
         this.render();
     };
 
-    this.View.prototype.render = function (mouse_coords) {
+    this.View.prototype.rotate = function () {
 	this.theta = this.start_theta - 2 * (this.mouse_pos.x - this.mouse_start.x);
 	this.phi = Math.min(Math.PI/2,
                             Math.max(-Math.PI/2, this.start_phi + 2 *
                                      (this.mouse_pos.y - this.mouse_start.y)));
 
-        this.camera.position.x = 40 * Math.sin(this.theta) * Math.cos(this.phi);
-        this.camera.position.y = 40 * Math.sin(this.phi);
-	this.camera.position.z = 40 * Math.cos(this.theta) * Math.cos(this.phi);
+        this.camera.position.x = 40 * Math.sin(this.theta) * Math.cos(this.phi) +
+	    this.camera_offset.x;
+        this.camera.position.y = 40 * Math.sin(this.phi) + this.camera_offset.y;
+	this.camera.position.z = 40 * Math.cos(this.theta) * Math.cos(this.phi) +
+	    this.camera_offset.z;
         this.camera.width = 20 * this.scale;
         this.camera.height = 20 * this.scale;
         this.camera.updateProjectionMatrix();
 	this.camera.lookAt( this.scene.position );
+    };
+
+    this.View.prototype.pan = function () {
+	var camera_x = this.camera.position.x,
+	    camera_y = this.camera.position.y,
+	    camera_z = this.camera.position.z;
+	this.camera.translateX(-10*this.scale * (this.mouse_pos.x - this.mouse_start.x));
+	this.camera.translateY(10*this.scale * (this.mouse_pos.y - this.mouse_start.y));
+
+ 	this.scene.position.x += this.camera.position.x - camera_x;
+	this.scene.position.y += this.camera.position.y - camera_y;
+	this.scene.position.z += this.camera.position.z - camera_z;
+
+	this.mouse_start = this.mouse_pos;
+    };
+
+    this.View.prototype.render = function (mouse_coords) {
 
         this.renderer.clear();
         this.renderer.render( this.scene, this.camera );
