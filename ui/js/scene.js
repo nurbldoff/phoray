@@ -169,17 +169,18 @@ var view3d = (function () {
     this.View.prototype.draw_traces = function (data, colors) {
         console.log("draw_trace");
 
-	var system, tmpdata, start, end, geometry, trace, line, i, j, n;
+	var system, tmpdata, start, end, geometry, trace, line, i, j, n, m;
 
         for (system in data) {
             tmpdata = data[system];
 
 	    // Draw succeeded rays
             geometry = new THREE.Geometry();
-	    for (i=0; i < tmpdata.succeeded.length; i++) {
+	    m = tmpdata.succeeded.length;
+	    for (i=0; i < m; i++) {
 		trace = tmpdata.succeeded[i];
-		n = trace.length - 1;
-                for (j=0; j<n; j++ ) {
+		m = trace.length - 1;
+                for (j=0; j < m; j++ ) {
                     if (trace[j][0] === NaN)
                         break;
                     start = new THREE.Vector3(
@@ -199,7 +200,8 @@ var view3d = (function () {
 
 	    // Draw failed rays
             geometry = new THREE.Geometry();
-	    for (i=0; i < tmpdata.failed.length; i++) {
+	    m = tmpdata.failed.length;
+	    for (i=0; i < m; i++) {
 		trace = tmpdata.failed[i];
 		n = trace.length - 1;
                 for (j=0; j<n; j++ ) {
