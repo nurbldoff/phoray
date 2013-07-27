@@ -38,6 +38,7 @@ var view3d = (function () {
 	    geometry.colors.push( color, color, color, color );
         }
         var grid = new THREE.Line( geometry, material, THREE.LinePieces );
+	grid.renderDepth = -10;  // prevent the grid from obscuring rays
         scene.add(grid);
     }
 
@@ -132,6 +133,7 @@ var view3d = (function () {
             element = this.renderer.domElement;
             element.id = "view";
             this.renderer.setSize( view_width, view_height );
+	    //this.renderer.sortObjects = false;
 
             this.scene = new THREE.Scene();
             this.overlay = new THREE.Scene();
@@ -285,7 +287,8 @@ var view3d = (function () {
         for(x = res*(res-1); x >= 0; x-=res)
             geom.vertices.push(new THREE.Vector3(verts[x][0], verts[x][1], verts[x][2]));
         var outline = new THREE.Line(
-            geom, new THREE.LineBasicMaterial({color: 0xFFFFFF, linewidth: 2}),
+            geom, new THREE.LineDashedMaterial({
+		dashSize: .1, gapSize: 0.2, color: 0xFFFFFF, linewidth: 2}),
             THREE.LineStrip);
         return outline;
     };
@@ -328,7 +331,7 @@ var view3d = (function () {
 
         this.obj = new THREE.Object3D();  // the main container
         this.obj.position = repr.obj.position;
-        this.obj.rotation = repr.obj.rotation;
+        this.obj.quaternion = repr.obj.quaternion;
         this.overlay.add(this.obj);
 
         this.outline = new THREE.Object3D();  // mesh outline
@@ -352,8 +355,8 @@ var view3d = (function () {
         var visible = this.axis.visible;
         var outline = make_outline(meshdata.verts);
         outline.visible = this.outline.visible;
-        outline.position = this.repr.mesh.position;
-        outline.rotation = this.repr.mesh.rotation;
+        // outline.position = this.repr.obj.position;
+        // outline.rotation = this.repr.obj.rotation;
         outline.visible = visible;
         this.outline = outline;
         this.obj.add(this.outline);
