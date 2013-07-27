@@ -181,10 +181,12 @@ var view3d = (function () {
 	    m = tmpdata.succeeded.length;
 	    for (i=0; i < m; i++) {
 		trace = tmpdata.succeeded[i];
-		m = trace.length - 1;
-                for (j=0; j < m; j++ ) {
-                    if (trace[j][0] === NaN)
+		n = trace.length - 1;
+                for (j=0; j < n; j++ ) {
+                    if (trace[j][0] === NaN) {
+			console.log("NaN");
                         break;
+		    }
                     start = new THREE.Vector3(
                         trace[j][0], trace[j][1], trace[j][2]),
                     geometry.vertices.push(start);
