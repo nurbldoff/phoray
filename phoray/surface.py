@@ -1,4 +1,6 @@
 from __future__ import division
+
+from abc import ABCMeta, abstractmethod
 from math import *
 
 import numpy as np
@@ -17,16 +19,19 @@ class Surface(object):
     An abstract 3D surface.
     Should not be instantiated but serves as a base class to be inherited.
     """
+    __metaclass__ = ABCMeta
 
     def __init__(self, xsize:Length=1.0, ysize:Length=1.0):
         self.xsize, self.ysize = xsize, ysize
 
+    @abstractmethod
     def intersect(self, r):
         """This method needs to be implemented by an actual surface.
         Shall return the point where Ray r intersects the surface.
         """
         pass
 
+    @abstractmethod
     def normal(self, p):
         """This method needs to be implemented by an actual surface.
         Shall return the normal to the surface at point p.
@@ -129,6 +134,7 @@ class Surface(object):
         else:
             return None
 
+    @abstractmethod
     def mesh(self, res):
         """
         This method needs to be implemented by an actual surface.
