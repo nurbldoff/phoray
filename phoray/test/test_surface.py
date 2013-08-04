@@ -112,7 +112,7 @@ class ToroidSurfaceTestCase(PhorayTestCase):
 
     def test_reflect(self):
         """Check that a toroid tends toward a sphere when R shrinks."""
-        sphere = Toroid(0.0000000001, 1)
+        sphere = Toroid(1e-20, 1)
         rays = Rays(array([(0, 0, -1)]), array([(A, B, 1)]) /
                     sqrt(A**2 + B**2 + 1), None)
         reflection = sphere.reflect(rays)

@@ -94,12 +94,10 @@ def signature(cls):
     bases = inspect.getmro(cls)
     for base in (bases[:-1]):  # skip the object class
         spec = base.__init__.__annotations__
-        print("spec", spec)
-        # if len(spec.args[1:]) != len(spec.defaults):
-        #     print("The init function for %s is missing default arguments!" %
-        #           cls.__name__)
-        #     return None
-        for arg, annot in spec.items():
+        args = (a for a in inspect.getfullargspec(base.__init__)[0]
+                if a in spec)  # keep the arguments in order
+        for arg in args:
+            annot = spec[arg]
             argsubtype = None
             argtype = annot
             if not arg.startswith("_"):
@@ -114,8 +112,4 @@ def signature(cls):
                 sig[arg] = dict(type=str(argtype))
                 if argsubtype:
                     sig[arg]["subtype"] = argsubtype
-    print()
-    print("signature", cls.__name__)
-    pprint(sig)
-    print()
     return sig
