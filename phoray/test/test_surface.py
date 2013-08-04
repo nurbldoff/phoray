@@ -1,9 +1,16 @@
+"""
+Tests for the surface classes.
+
+TODO: Most classes have only very basic tests. Expand.
+"""
+
 from math import sqrt, atan, sin, cos, asin
 from random import uniform, randint
 
 from numpy import array, allclose, isnan
 
-from phoray.surface import Plane, Sphere, Cylinder, Ellipsoid, Paraboloid
+from phoray.surface import (Plane, Sphere, Cylinder, Ellipsoid, Paraboloid,
+                            Toroid)
 from phoray.ray import Rays
 
 from . import PhorayTestCase
@@ -91,9 +98,21 @@ class CylinderSurfaceTestCase(PhorayTestCase):
 
 class EllipsoidSurfaceTestCase(PhorayTestCase):
 
-    def test_reflect_spherical(self):
+    def test_reflect(self):
         """Check that an ellipsoid with all equal radii is a sphere."""
         sphere = Ellipsoid(1, 1, 1)
+        rays = Rays(array([(0, 0, -1)]), array([(A, B, 1)]) /
+                    sqrt(A**2 + B**2 + 1), None)
+        reflection = sphere.reflect(rays)
+        self.assertTrue(allclose(reflection.endpoints + reflection.directions,
+                                 [(0, 0, -1)]))
+
+
+class ToroidSurfaceTestCase(PhorayTestCase):
+
+    def test_reflect(self):
+        """Check that a toroid tends toward a sphere when R shrinks."""
+        sphere = Toroid(0.0000000001, 1)
         rays = Rays(array([(0, 0, -1)]), array([(A, B, 1)]) /
                     sqrt(A**2 + B**2 + 1), None)
         reflection = sphere.reflect(rays)
@@ -104,6 +123,9 @@ class EllipsoidSurfaceTestCase(PhorayTestCase):
 class ParaboloidSurfaceTestCase(PhorayTestCase):
 
     def test_reflect(self):
+        """Test that a paraboloid parallelizes light originating from the focal
+        point.
+        """
         surf = Paraboloid(1, 1, -1)
         ray = Rays(array([(0, 0, -0.25)]), array([(A, B, 1)]), None)
         reflection = surf.reflect(ray)

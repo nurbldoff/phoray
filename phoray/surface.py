@@ -16,7 +16,7 @@ from . import Length
 
 class Surface(object):
     """
-    An abstract 3D surface.
+    An abstract representation of a 3D surface.
     Should not be instantiated but serves as a base class to be inherited.
     """
     __metaclass__ = ABCMeta
@@ -29,14 +29,12 @@ class Surface(object):
         """This method needs to be implemented by an actual surface.
         Shall return the point where Ray r intersects the surface.
         """
-        pass
 
     @abstractmethod
     def normal(self, p):
         """This method needs to be implemented by an actual surface.
         Shall return the normal to the surface at point p.
         """
-        pass
 
     def grating_direction(self, ps):
         """
@@ -134,13 +132,24 @@ class Surface(object):
         else:
             return None
 
-    @abstractmethod
     def mesh(self, res):
         """
-        This method needs to be implemented by an actual surface.
         Returns the vertices and faces of a mesh representing the surface.
         """
-        pass
+        w, h = self.xsize, self.ysize
+        xs, ys = np.meshgrid(np.linspace(-w / 2, w / 2, res + 1),
+                             np.linspace(-h / 2, h / 2, res + 1))
+        n = (res + 1)**2
+        rays = Rays(array((xs.flatten(), ys.flatten(), np.zeros(n))).T,
+                    array((np.zeros(n), np.zeros(n), np.ones(n))).T, None)
+        verts = self.intersect(rays)
+        faces = []
+        for i in range(res):
+            for j in range(res):
+                current = i * (res + 1) + j
+                faces.append((current, current + 1, current + 2 + res))
+                faces.append((current, current + 2 + res, current + 1 + res))
+        return verts, faces
 
 
 class Plane(Surface):
@@ -169,7 +178,7 @@ class Plane(Surface):
                   p, nans)
         return q.T
 
-    def mesh(self, res=10):
+    def _mesh(self, res=10):
         verts = []
         faces = []
         w = self.xsize
@@ -215,7 +224,6 @@ class Sphere(Surface):
         t = quadratic(rz ** 2 + rx ** 2 + ry ** 2,
                       2 * az * rz + 2 * ax * rx + 2 * ay * ry,
                       (az ** 2 + ax ** 2 + ay ** 2) - self.R ** 2)
-
         # Figure out which intersection we should use
         if self.R > 0:
             p = where(az + np.max(t, axis=0) * rz > 0,
@@ -234,23 +242,71 @@ class Sphere(Surface):
                   p, nans)
         return q.T - self.offset
 
-    def mesh(self, res=10):
-        verts = []
-        faces = []
-        w = self.xsize
-        h = self.ysize
-        sgn = copysign(1, self.R)
 
-        for x in (-w / 2 + d * w / res for d in range(res + 1)):
-            for y in (-h / 2 + d * h / res for d in range(res + 1)):
-                z = sgn * sqrt(self.R ** 2 - x ** 2 - y ** 2)
-                verts.append((x, y, z - self.R))
-        for i in range(res):
-            for j in range(res):
-                current = i * (res + 1) + j
-                faces.append((current, current + 1, current + 2 + res))
-                faces.append((current, current + 2 + res, current + 1 + res))
-        return verts, faces
+class Toroid(Surface):
+
+    """A toroidal surface."""
+
+    def __init__(self, R:Length=1, r:Length=1, *args, **kwargs):
+        self.R = R
+        self.r = r
+        self.offset = array((0, 0, self.R + self.r))
+        if "xsize" in kwargs:
+            kwargs["xsize"] = min(kwargs["xsize"], 2*abs(R))
+        if "ysize" in kwargs:
+            kwargs["ysize"] = min(kwargs["ysize"], 2*abs(r))
+        Surface.__init__(self, *args, **kwargs)
+
+    def normal(self, p):
+        x, z, y = (p + self.offset).T
+        a = x**2 + y**2 + z**2 - self.r**2 - self.R**2
+        n = array((4*x * a, 4*z * a + 8 * self.R**2 * z, 4*y * a))
+        return -(n / vector_norm(n, axis=0)).T
+
+    def intersect(self, rays):
+
+        rx, ry, rz = r = rays.directions.T
+        ax, ay, az = a = (rays.endpoints + self.offset).T
+
+        R = self.R
+        _r = self.r
+
+        A = rx**2 + ry**2 + rz**2
+        B = 2*(ax*rx + ay*ry + az*rz)
+        C = (ax**2 + ay**2 + az**2) - _r**2 - R**2
+
+        # FIXME: get rid of this loop!
+        t = []
+        for i in range(len(rays.directions)):
+            Ai = A[i]
+            Bi = B[i]
+            Ci = C[i]
+            ryi = ry[i]
+            ayi = ay[i]
+            t.append(np.roots((Ai**2,
+                               2*Ai*Bi,
+                               Bi**2 + 2*Ai*Ci + 4*R**2*ryi**2,
+                               2*Bi*Ci + 8*R**2*ayi*ryi,
+                               Ci**2 + 4*R**2*ayi**2 - 4*R**2*_r**2)))
+        t = array(t).T
+
+        # Figure out which intersection we should use
+        if self.R > 0:
+            p = where(az + np.max(t, axis=0) * rz > 0,
+                      a + np.real(np.max(t, axis=0)) * r,
+                      a + np.real(np.min(t, axis=0)) * r)
+        else:
+            p = where(az + np.min(t, axis=0) * rz < 0,
+                      a + np.real(np.min(t, axis=0)) * r,
+                      a + np.real(np.max(t, axis=0)) * r)
+        px, py, pz = p
+        halfxsize = self.xsize / 2
+        halfysize = self.ysize / 2
+        nans = np.empty((3, len(px)))
+        nans[:] = np.NaN
+        q = where((np.abs(px) <= halfxsize) & (np.abs(py) <= halfysize),
+                  p, nans)
+        return q.T - self.offset
 
 
 class Cylinder(Surface):
@@ -298,24 +354,6 @@ class Cylinder(Surface):
         nans[:] = np.NaN
         q = where((np.abs(px) <= halfxsize) & (np.abs(py) <= halfysize), p, nans)
         return q.T - self.offset
-
-    def mesh(self, res=10):
-        verts = []
-        faces = []
-        w = self.xsize
-        h = self.ysize
-        sgn = copysign(1, self.R)
-        for x in (-w / 2 + d * w / res for d in range(res + 1)):
-            for y in (-h / 2 + d * h / res for d in range(res + 1)):
-                z = sgn * sqrt(self.R ** 2 - y ** 2)
-                verts.append((x, y, z - self.R))
-
-        for i in range(res):
-            for j in range(res):
-                current = i * (res + 1) + j
-                faces.append((current, current + 1, current + 2 + res))
-                faces.append((current, current + 2 + res, current + 1 + res))
-        return verts, faces
 
 
 class Ellipsoid(Surface):
@@ -367,24 +405,6 @@ class Ellipsoid(Surface):
         q = where((np.abs(px) <= xsize) & (np.abs(py) <= ysize), p, nans)
         return q.T - self.offset
 
-    def mesh(self, res=10):
-        verts = []
-        faces = []
-        w, h = self.xsize, self.ysize
-        a, b, c = self.a, self.b, self.c
-        sgn = copysign(1, self.a * self.b * self.c)
-        for x in (-w / 2 + d * w / res for d in range(res + 1)):
-            for y in (-h / 2 + d * h / res for d in range(res + 1)):
-                z = sgn * sqrt((c ** 2) * (
-                        1 - x ** 2 / a ** 2 - y ** 2 / b ** 2))
-                verts.append((x, y, z - c))
-        for i in range(res):
-            for j in range(res):
-                current = i * (res + 1) + j
-                faces.append((current, current + 1, current + 2 + res))
-                faces.append((current, current + 2 + res, current + 1 + res))
-        return verts, faces
-
 
 class Paraboloid(Surface):
     """
@@ -428,19 +448,3 @@ class Paraboloid(Surface):
                   p, nans)
 
         return q.T
-
-    def mesh(self, res=10):
-        verts = []
-        faces = []
-        w = self.xsize
-        h = self.ysize
-        a, b, c = self.a, self.b, self.c
-        for x in (-w / 2 + d * w / res for d in range(res + 1)):
-            for y in (-h / 2 + d * h / res for d in range(res + 1)):
-                verts.append((x, y, c * (x ** 2 / a ** 2 + y ** 2 / b ** 2)))
-        for i in range(res):
-            for j in range(res):
-                current = i * (res + 1) + j
-                faces.append((current, current + 1, current + 2 + res))
-                faces.append((current, current + 2 + res, current + 1 + res))
-        return verts, faces
