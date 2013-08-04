@@ -252,7 +252,7 @@ class Toroid(Surface):
         self.r = r
         self.offset = array((0, 0, self.R + self.r))
         if "xsize" in kwargs:
-            kwargs["xsize"] = min(kwargs["xsize"], 2*abs(R))
+            kwargs["xsize"] = min(kwargs["xsize"], 2*abs(R + r))
         if "ysize" in kwargs:
             kwargs["ysize"] = min(kwargs["ysize"], 2*abs(r))
         Surface.__init__(self, *args, **kwargs)
@@ -275,20 +275,12 @@ class Toroid(Surface):
         B = 2*(ax*rx + ay*ry + az*rz)
         C = (ax**2 + ay**2 + az**2) - _r**2 - R**2
 
-        # FIXME: get rid of this loop!
-        t = []
-        for i in range(len(rays.directions)):
-            Ai = A[i]
-            Bi = B[i]
-            Ci = C[i]
-            ryi = ry[i]
-            ayi = ay[i]
-            t.append(np.roots((Ai**2,
-                               2*Ai*Bi,
-                               Bi**2 + 2*Ai*Ci + 4*R**2*ryi**2,
-                               2*Bi*Ci + 8*R**2*ayi*ryi,
-                               Ci**2 + 4*R**2*ayi**2 - 4*R**2*_r**2)))
-        t = array(t).T
+        poly = array((A**2,
+                      2*A*B,
+                      B**2 + 2*A*C + 4*R**2*ry**2,
+                      2*B*C + 8*R**2*ay*ry,
+                      C**2 + 4*R**2*ay**2 - 4*R**2*_r**2)).T
+        t = array([np.roots(p) for p in poly]).T
 
         # Figure out which intersection we should use
         if self.R > 0:
