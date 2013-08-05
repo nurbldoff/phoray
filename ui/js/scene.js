@@ -124,9 +124,34 @@ var view3d = (function () {
             // backend doesn't work. Needs testing and probably some tweaking, though.
 
         } else {
-            this.renderer = new THREE.WebGLRenderer({antialias: true, clearAlpha: 1, clearColor: 0x3f3f3f});
-            this.renderer.autoClear = false;
+
+	    // var attributes = {
+	    // 	displacement: {	type: 'v3', value: new THREE.Vector3() },
+	    // 	customColor: {	type: 'c', value: new THREE.Color(0xffffff) }
+	    // };
+
+	    // var uniforms = {
+	    // 	amplitude: { type: "f", value: 5.0 },
+	    // 	opacity:   { type: "f", value: 0.3 },
+	    // 	color:     { type: "c", value: new THREE.Color( 0xff0000 ) }
+	    // };
+
+	    // self.shaderMaterial = new THREE.ShaderMaterial( {
+	    // 	uniforms:       uniforms,
+	    // 	attributes:     attributes,
+	    // 	vertexShader:   document.getElementById( 'vertexshader' ).textContent,
+	    // 	fragmentShader: document.getElementById( 'fragmentshader' ).textContent,
+	    // 	blending:       THREE.AdditiveBlending,
+	    // 	depthTest:      false,
+	    // 	transparent:    true
+	    // });
+	    // self.shaderMaterial.linewidth = 1;
+
             //this.renderer = new THREE.CanvasRenderer({antialias: false});
+            this.renderer = new THREE.WebGLRenderer({antialias: true});
+	    this.renderer.setClearColor(0x3f3f3f);
+
+            this.renderer.autoClear = false;
 
             var view_width = element.offsetWidth, view_height = element.offsetHeight;
 
@@ -159,6 +184,7 @@ var view3d = (function () {
             setup_grid(this.scene);
             setup_input(this, element);
 
+	    this.rotate();
 	    this.render();
         }
     };
@@ -211,11 +237,16 @@ var view3d = (function () {
                     geometry.vertices.push(end);
                 }
             }
+	    //line = new THREE.Line(geometry, self.shaderMaterial, THREE.LinePieces);
             line = new THREE.Line(
-                geometry, new THREE.LineBasicMaterial( {
+                geometry, new THREE.LineDashedMaterial( {
                     //color: color_from_string_times(colors[system], Math.random()),
                     color: color_from_string_times(colors[system]),
-                    opacity: 0.1, linewidth: .001} ), THREE.LinePieces);
+                    opacity: 0.02, linewidth: 1, dashSize: 0.0002, gapSize: 0.001,
+		    depthTest: false,
+		    blending: THREE.AdditiveBlending, transparent: true}
+	    					     ), THREE.LinePieces);
+	    geometry.computeLineDistances();
             this.traces.add(line);
 
 	    // Draw failed rays
@@ -243,6 +274,7 @@ var view3d = (function () {
 	    geometry.computeLineDistances();
             this.traces.add(line);
         }
+	this.rotate();
         this.render();
     };
 
@@ -374,18 +406,23 @@ var view3d = (function () {
 
         this.outline = new THREE.Object3D();  // mesh outline
         this.outline.visible = false;
-        this.obj.add(this.outline);
 
         this.axis = make_axis();
         // this.axis.position = this.obj.position;
         // this.axis.rotation = this.obj.rotation;
-        this.axis.visible = false;
+
+	this.set_visible(false);
+        this.obj.add(this.outline);
         this.obj.add(this.axis);
     };
 
+    Selection.prototype.remove = function () {
+	this.overlay.remove(this.obj);
+    };
+
     Selection.prototype.set_visible = function (visible) {
-        this.outline.visible = visible;
-        this.axis.traverse(function(obj) {obj.visible = visible;});
+	console.log("set selection visible", visible);
+        this.obj.traverse(function(obj) {obj.visible = visible;});
     };
 
     Selection.prototype.update = function (meshdata) {
@@ -423,8 +460,7 @@ var view3d = (function () {
 
     this.Representation.prototype.remove = function () {
         this.view.scene.remove(this.obj);
-        this.view.overlay.remove(this.axis);
-        this.view.overlay.remove(this.outline);
+	this.selection.remove();
         this.view.render();
     };
 
@@ -433,15 +469,14 @@ var view3d = (function () {
         // var position = args.frames[0].args.position, rotation = args.frames[0].args.rotation,
 	var position = {x: 0, y: 0, z: 0}, rotation = {x: 0, y: 0, z: 0},
             radians = Math.PI / 180;
-	for (var i=args.frames.length-1; i>=0; i--) {
-	    position.x += args.frames[i].args.position.x;
-	    position.y += args.frames[i].args.position.y;
-	    position.z += args.frames[i].args.position.z;
+	position.x = args.position.x;
+	position.y = args.position.y;
+	position.z = args.position.z;
 
-	    rotation.x += args.frames[i].args.rotation.x;
-	    rotation.y += args.frames[i].args.rotation.y;
-	    rotation.z += args.frames[i].args.rotation.z;
-	}
+	rotation.x = args.rotation.x;
+	rotation.y = args.rotation.y;
+	rotation.z = args.rotation.z;
+
         this.obj.position.set(position.x, position.y , position.z);
         this.obj.rotation.set(rotation.x * radians,
                               rotation.y * radians,
