@@ -466,16 +466,16 @@ var view3d = (function () {
 
     this.Representation.prototype.update = function (args) {
         console.log("update repr", args);
-        // var position = args.frames[0].args.position, rotation = args.frames[0].args.rotation,
-	var position = {x: 0, y: 0, z: 0}, rotation = {x: 0, y: 0, z: 0},
+        var position = args.frames[0].args.position, rotation = args.frames[0].args.rotation,
+	//var position = {x: 0, y: 0, z: 0}, rotation = {x: 0, y: 0, z: 0},
             radians = Math.PI / 180;
-	position.x = args.position.x;
-	position.y = args.position.y;
-	position.z = args.position.z;
+	// position.x = args.position.x;
+	// position.y = args.position.y;
+	// position.z = args.position.z;
 
-	rotation.x = args.rotation.x;
-	rotation.y = args.rotation.y;
-	rotation.z = args.rotation.z;
+	// rotation.x = args.rotation.x;
+	// rotation.y = args.rotation.y;
+	// rotation.z = args.rotation.z;
 
         this.obj.position.set(position.x, position.y , position.z);
         this.obj.rotation.set(rotation.x * radians,
