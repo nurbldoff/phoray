@@ -3,27 +3,38 @@ import json
 from pprint import pprint
 from time import time
 
-from numpy import isnan
-from bottle import get, post, request, run, static_file, route
+from numpy import isnan, ndarray
+from bottle import get, post, request, run, static_file, route, Bottle, JSONPlugin
 
 from meta import (classes, schemas, create_system, create_element,
                   create_source, create_geometry, create_frame)
 import util
 
 
+class NumpyAwareJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, ndarray):  # and obj.ndim == 1:
+            return obj.tolist()
+        return json.JSONEncoder.default(self, obj)
+
+app = Bottle()
+app.install(JSONPlugin(
+    json_dumps=lambda s: json.dumps(s, cls=NumpyAwareJSONEncoder)))
+
+
 # == Route callbacks ===
 
-@route('/')
+@app.route('/')
 def staticindex():
     return static_file('index.html', root='ui')
 
 
-@route('/static/<filepath:path>')
+@app.route('/static/<filepath:path>')
 def staticpath(filepath):
     return static_file(filepath, root='ui')
 
 
-@get('/schema')
+@app.get('/schema')
 def get_schema():
     print("schema")
     pprint(schemas)
@@ -32,7 +43,7 @@ def get_schema():
                 for kind, clss in classes.items())
 
 
-@post('/system')
+@app.post('/system')
 def define_system():
     data[:] = []
 
@@ -51,12 +62,12 @@ def define_system():
         return get_system()
 
 
-@get('/system')
+@app.get('/system')
 def get_system():
     return dict(systems=[util.object_to_dict(s, schemas) for s in data])
 
 
-@get('/create')
+@app.get('/create')
 def create():
     query = request.query
     print(dict(query))
@@ -76,7 +87,7 @@ def create():
     return result
 
 
-@get('/mesh')
+@app.get('/mesh')
 def get_mesh():
     """Return a mesh representation of an element."""
     query = request.query
@@ -86,7 +97,7 @@ def get_mesh():
     return {"verts": verts, "faces": faces}
 
 
-@get('/trace')
+@app.get('/trace')
 def trace():
     """Trace the paths of a number of rays through a system."""
     t0 = time()
@@ -127,7 +138,7 @@ def trace():
     return dict(traces=result, time=dt)
 
 
-@get('/footprint')
+@app.get('/footprint')
 def footprint():
     """Return the current traced footprint for the given element."""
     query = request.query
@@ -140,4 +151,4 @@ def footprint():
 if __name__ == "__main__":
     data = []
     # Start the server
-    run(host='localhost', port=8080, debug=True, reloader=True)
+    run(app, host='localhost', port=8080, debug=True, reloader=True)
