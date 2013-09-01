@@ -582,7 +582,7 @@
     };
 
     // add up/down arrowkey behavior to numeric inputs
-    $(document).on("keypress", "input[type=number]", updown);
+    //$(document).on("keypress", "input[type=number]", updown);
 
     ko.applyBindings(new MainViewModel());
 })();

@@ -98,13 +98,14 @@
             <!-- /ko -->
 
             <div class="wrap">
-                <div>
-                  <button class="grid-6" data-bind="click: $root.add_source">Add Source</button>
-                  <button class="grid-6" data-bind="click: $root.add_element">Add Element</button>
-                </div><div>
-                  <button class="grid-6" data-bind="click: $data.trace">Trace</button>
-                  <button class="grid-6" data-bind="click: $data.clear_traces">Clear trace</button>
-                </div>
+                <!-- <div> -->
+                <!--   <button class="grid-6" data-bind="click: $root.add_source">Add Source</button> -->
+                <!--   <button class="grid-6" data-bind="click: $root.add_element">Add Element</button> -->
+                <!-- </div> -->
+		<!-- <div> -->
+                <!--   <button class="grid-6" data-bind="click: $root.trace">Trace</button> -->
+                <!--   <button class="grid-6" data-bind="click: $root.clear_traces">Clear trace</button> -->
+                <!-- </div> -->
             </div>
           </div>
         </div>
@@ -213,27 +214,24 @@
 
   <script type="text/html" id="property-float">
     <div class="grid-6 label underline" data-bind="text: name"> </div>
-    <input class="grid-6" data-bind="value: value.forceNumeric(),
-                                     valueUpdate: 'afterkeydown'"/>
+    <input class="grid-6" data-bind="value: value.forceNumeric()"/>
   </script>
 
   <script type="text/html" id="property-int">
     <div class="grid-6 label underline" data-bind="text: name"> </div>
-    <input class="grid-6" type="number" data-bind="value: value.forceInteger(),
-                                                   valueUpdate: 'afterkeydown'">
+    <input class="grid-6" type="number" data-bind="value: value.forceInteger()">
   </script>
 
   <script type="text/html" id="property-Length">
     <div class="grid-6 label underline" data-bind="text: name"> </div>
-    <input class="grid-6" type="number" data-bind="value: value.forceNonZero(),
-                                                   valueUpdate: 'afterkeydown'">
+    <input class="grid-6" type="number" data-bind="value: value.forceNonZero()">
 
   </script>
 
   <script type="text/html" id="property-angle">
       <div class="grid-6 label underline" data-bind="text: name"> </div>
-      <input class="grid-6" type="number" data-bind="value: value.forceNumeric(),
-                                                     valueUpdate: 'afterkeydown'">
+      <input class="grid-6" type="number" data-bind="value: value.forceNumeric()">
+
   </script>
 
   <script type="text/html" id="property-vector">
@@ -242,15 +240,15 @@
     <div class="attrib">
       <div class="grid-1 to-right"> x: </div>
       <input class="float-value grid-3" type="number"
-             data-bind="value: value.x.forceNumeric(), valueUpdate: 'afterkeydown'"/>
+             data-bind="value: value.x.forceNumeric()"/>
 
       <div class="grid-1 to-right"> y: </div>
       <input class="float-value grid-3" type="number"
-             data-bind="value: value.y.forceNumeric(), valueUpdate: 'afterkeydown'"/>
+             data-bind="value: value.y.forceNumeric()"/>
 
       <div class="grid-1 to-right"> z: </div>
       <input class="float-value grid-3" type="number"
-             data-bind="value: value.z.forceNumeric(), valueUpdate: 'afterkeydown'"/>
+             data-bind="value: value.z.forceNumeric()"/>
 
     </div>
   </script>
